@@ -26,7 +26,7 @@ view maybeViewer page { title, content } =
     , body =
         [ IconInjector.view
         , Html.div
-            [ Attributes.class "h-full flex justify-center"
+            [ Attributes.class "h-full flex justify-center overflow-y-auto scrolling-touch"
             , Attributes.style "background" "#46c141"
             ]
             [ Html.div [ Attributes.class "max-w-xs w-full sm:flex hidden flex-col items-center" ]
@@ -46,7 +46,7 @@ view maybeViewer page { title, content } =
                         ]
                     ]
                 ]
-            , Html.div [ Attributes.class "w-full h-full sm:hidden" ] [ content ]
+            , Html.div [ Attributes.class "w-full h-full sm:hidden px-6 pt-6" ] [ content ]
             ]
         ]
     }

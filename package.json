@@ -1,11 +1,12 @@
 {
-  "name": "elm-spa-base",
+  "name": "rollover",
   "version": "1.0.0",
   "private": true,
   "scripts": {
     "prebuild": "rm -rf dist",
     "build": "webpack --mode production --config webpack.prod.config.js",
-    "start": "webpack-dev-server --mode development --port 3000 --config webpack.dev.config.js"
+    "start": "webpack-dev-server --mode development --port 3000 --config webpack.dev.config.js",
+    "start-bindall": "webpack-dev-server --mode development --port 3000 --config webpack.dev.config.js --host 0.0.0.0"
   },
   "devDependencies": {
     "@babel/core": "7.0.0-beta.46",

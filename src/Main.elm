@@ -21,14 +21,6 @@ import Username exposing (Username)
 import Viewer exposing (Viewer)
 
 
-
--- NOTE: Based on discussions around how asset management features
--- like code splitting and lazy loading have been shaping up, it's possible
--- that most of this file may become unnecessary in a future release of Elm.
--- Avoid putting things in this module unless there is no alternative!
--- See https://discourse.elm-lang.org/t/elm-spa-in-0-19/1800/2 for more.
-
-
 type Model
     = Redirect Session
     | NotFound Session
@@ -246,30 +238,3 @@ main =
         , update = update
         , view = view
         }
-
-
-
--- -- VIEW
--- view : Model -> Browser.Document Msg
--- view model =
---     { title = "URL Interceptor"
---     , body =
---         [ Ui.IconInjector.view
---         , div [ class "h-full bg-grey-lightest" ]
---             [ span [ class "flex items-center" ]
---                 [ text "The current URL is:"
---                 , span [ class "text-green w-4 h-4 mx-1" ]
---                     [ Ui.Icon.view { alt = "Check Mark", icon = Ui.Icon.Check }
---                     ]
---                 , b [] [ text (Url.toString model.url) ]
---                 ]
---             , ul []
---                 [ viewLink "/home"
---                 , viewLink "/profile"
---                 , viewLink "/reviews/the-century-of-the-self"
---                 , viewLink "/reviews/public-opinion"
---                 , viewLink "/reviews/shah-of-shahs"
---                 ]
---             ]
---         ]
---     }

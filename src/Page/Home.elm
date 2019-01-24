@@ -64,7 +64,7 @@ view model =
                         [ Icon.view { alt = "categories", icon = Icon.List }
                         ]
                     ]
-                , Html.div [ Attributes.class "flex justify-center text-white rounded-full my-16" ]
+                , Html.div [ Attributes.class "flex justify-center text-white rounded-full mt-16 mb-12" ]
                     [ Html.span [ Attributes.class "-ml-6 text-5xl" ] [ Html.text "$" ]
                     , Html.span
                         [ Attributes.class "-mt-4"
@@ -87,7 +87,7 @@ view model =
                     , keyPadButton "<"
                     ]
                 , Html.div
-                    [ Attributes.class "flex mt-4" ]
+                    [ Attributes.class "flex mt-6" ]
                     [ Html.div [ Attributes.class "w-1/2" ]
                         [ Html.button
                             [ Attributes.class "p-4 mr-px rounded-l-lg w-full"
