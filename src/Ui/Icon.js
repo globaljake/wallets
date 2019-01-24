@@ -44,7 +44,7 @@ const createSvgIcon = (iconName, iconTitle) => {
 const start = _app => {
   return load().then(() => {
     CustomElements.define(
-      "ui-icon",
+      "ui-rollover-icon",
       HTMLElement =>
         class extends HTMLElement {
           constructor() {

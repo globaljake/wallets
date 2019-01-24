@@ -32,18 +32,18 @@ view maybeViewer page { title, content } =
             [ Html.div [ Attributes.class "max-w-xs w-full sm:flex hidden flex-col items-center" ]
                 [ Html.img
                     [ Attributes.src "./assets/rollover-logo.svg"
-                    , Attributes.class "my-6 w-2/3"
+                    , Attributes.class "my-8 w-2/3"
                     ]
                     []
                 , Html.div [ Attributes.class "relative w-full justify-center" ]
-                    [ Html.div [ Attributes.class "absolute pin" ]
+                    [ Html.div [ Attributes.class "px-6 pt-12" ] [ content ]
+                    , Html.div [ Attributes.class "absolute pin pointer-events-none" ]
                         [ Html.img
                             [ Attributes.src "./assets/iphone.svg"
                             , Attributes.class "w-full"
                             ]
                             []
                         ]
-                    , Html.div [ Attributes.class "px-6 pt-12" ] [ content ]
                     ]
                 ]
             , Html.div [ Attributes.class "w-full h-full sm:hidden" ] [ content ]

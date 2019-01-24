@@ -8,16 +8,19 @@ import Json.Encode as Encode
 type Icon
     = Check
     | Lock
+    | List
+    | ChevronLeft
+    | ChevronRight
 
 
 view : { alt : String, icon : Icon } -> Html msg
 view config =
-    Html.node "ui-icon" [ iconName config.icon, iconTitle config.alt ] []
+    Html.node "ui-rollover-icon" [ iconName config.icon, iconTitle config.alt ] []
 
 
 viewDecorative : Icon -> Html msg
 viewDecorative icon =
-    Html.node "ui-icon" [ iconName icon ] []
+    Html.node "ui-rollover-icon" [ iconName icon ] []
 
 
 
@@ -42,3 +45,12 @@ toString icon =
 
         Lock ->
             "lock"
+
+        List ->
+            "list"
+
+        ChevronLeft ->
+            "chevron-left"
+
+        ChevronRight ->
+            "chevron-right"
