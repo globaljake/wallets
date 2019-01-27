@@ -36,7 +36,12 @@ view maybeViewer page { title, content } =
                     ]
                     []
                 , Html.div [ Attributes.class "relative w-full justify-center" ]
-                    [ Html.div [ Attributes.class "px-6 pt-12" ] [ content ]
+                    [ Html.div
+                        [ Attributes.class "px-6 pt-12"
+                        , Attributes.style "transform" "scale(.8)"
+                        , Attributes.style "transform-origin" "top"
+                        ]
+                        [ content ]
                     , Html.div [ Attributes.class "absolute pin pointer-events-none" ]
                         [ Html.img
                             [ Attributes.src "./assets/iphone.svg"

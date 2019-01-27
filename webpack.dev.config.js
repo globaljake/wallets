@@ -58,7 +58,7 @@ module.exports = {
         options: {
           cwd: __dirname,
           runtimeOptions: "-A128m -H128m -n8m",
-          debug: true
+          debug: false
         }
       }
     ]

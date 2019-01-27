@@ -46,31 +46,37 @@ view : Model -> { title : String, content : Html Msg }
 view model =
     { title = "Home"
     , content =
-        Html.div [ Attributes.class "w-full h-full p-4" ]
+        Html.div [ Attributes.class "w-full h-full" ]
             [ Html.div [ Attributes.class "flex flex-col" ]
-                [ Html.div [ Attributes.class "flex justify-between items-center" ]
+                [ Html.div [ Attributes.class "flex items-end h-10 justify-between" ]
                     [ Html.button
-                        [ Attributes.class "w-6 h-6 border-2 border-white rounded-full"
+                        [ Attributes.class "w-8 h-8 border-2 border-white rounded-full"
                         , Attributes.style "background-image" "url(https://github.com/globaljake.png)"
                         , Attributes.style "background-size" "contain"
                         ]
                         []
                     , Html.button
-                        [ Attributes.class "text-white text-xs rounded-full p-2"
+                        [ Attributes.class "text-white rounded-full px-4 py-2"
                         , Attributes.style "background-color" "rgba(255,255,255,.1)"
                         ]
-                        [ Html.text "Monthly Budget" ]
-                    , Html.button [ Attributes.class "w-6 h-6 text-white" ]
+                        [ Html.text "$200.00" ]
+                    , Html.button [ Attributes.class "w-8 h-8 text-white" ]
                         [ Icon.view { alt = "categories", icon = Icon.List }
                         ]
                     ]
-                , Html.div [ Attributes.class "flex justify-center text-white rounded-full mt-16 mb-12" ]
-                    [ Html.span [ Attributes.class "-ml-6 text-5xl" ] [ Html.text "$" ]
-                    , Html.span
-                        [ Attributes.class "-mt-4"
-                        , Attributes.style "font-size" "7rem"
+                , Html.div [ Attributes.class "flex justify-center items-center h-64 my-8" ]
+                    [ Html.div [ Attributes.class "flex justify-center text-white" ]
+                        [ Html.span
+                            [ Attributes.class "-ml-6"
+                            , Attributes.style "font-size" "4.5rem"
+                            ]
+                            [ Html.text "$" ]
+                        , Html.span
+                            [ Attributes.class "-mt-6 font-light"
+                            , Attributes.style "font-size" "10rem"
+                            ]
+                            [ Html.text "0" ]
                         ]
-                        [ Html.text "0" ]
                     ]
                 , Html.div [ Attributes.class "flex flex-wrap" ]
                     [ keyPadButton "1"
@@ -90,18 +96,22 @@ view model =
                     [ Attributes.class "flex mt-6" ]
                     [ Html.div [ Attributes.class "w-1/2" ]
                         [ Html.button
-                            [ Attributes.class "p-4 mr-px rounded-l-lg w-full"
+                            [ Attributes.class "p-5 mr-px rounded-l-lg w-full"
                             , Attributes.style "background-color" "rgba(255,255,255,.1)"
                             ]
-                            [ Html.span [ Attributes.class "text-white text-sm" ] [ Html.text "Credit" ]
+                            [ Html.span [ Attributes.class "text-white font-medium text-xl" ]
+                                [ Html.text "Credit"
+                                ]
                             ]
                         ]
                     , Html.div [ Attributes.class "w-1/2" ]
                         [ Html.button
-                            [ Attributes.class "p-4 ml-px rounded-r-lg w-full"
+                            [ Attributes.class "p-5 ml-px rounded-r-lg w-full"
                             , Attributes.style "background-color" "rgba(255,255,255,.1)"
                             ]
-                            [ Html.span [ Attributes.class "text-white text-sm" ] [ Html.text "Debit" ]
+                            [ Html.span [ Attributes.class "text-white font-medium text-xl" ]
+                                [ Html.text "Debit"
+                                ]
                             ]
                         ]
                     ]
@@ -113,8 +123,8 @@ view model =
 keyPadButton : String -> Html msg
 keyPadButton label =
     Html.div [ Attributes.class "w-1/3" ]
-        [ Html.button [ Attributes.class "p-4 w-full" ]
-            [ Html.span [ Attributes.class "text-white" ] [ Html.text label ]
+        [ Html.button [ Attributes.class "p-5 w-full" ]
+            [ Html.span [ Attributes.class "text-white text-2xl" ] [ Html.text label ]
             ]
         ]
 
