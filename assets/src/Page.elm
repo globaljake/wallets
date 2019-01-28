@@ -3,6 +3,7 @@ module Page exposing (Page(..), view)
 import Api exposing (Cred)
 import Avatar
 import Browser exposing (Document)
+import Constants
 import Html exposing (Html)
 import Html.Attributes as Attributes
 import Html.Events as Events
@@ -31,7 +32,7 @@ view maybeViewer page { title, content } =
             ]
             [ Html.div [ Attributes.class "max-w-xs w-full sm:flex hidden flex-col items-center" ]
                 [ Html.img
-                    [ Attributes.src "./assets/rollover-logo.svg"
+                    [ Attributes.src (Constants.toAsset "images/rollover-logo.svg")
                     , Attributes.class "my-8 w-2/3"
                     ]
                     []
@@ -44,7 +45,7 @@ view maybeViewer page { title, content } =
                         [ content ]
                     , Html.div [ Attributes.class "absolute pin pointer-events-none" ]
                         [ Html.img
-                            [ Attributes.src "./assets/iphone.svg"
+                            [ Attributes.src (Constants.toAsset "images/iphone.svg")
                             , Attributes.class "w-full"
                             ]
                             []
