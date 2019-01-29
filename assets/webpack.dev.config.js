@@ -1,30 +1,21 @@
 const webpack = require("webpack");
 const path = require("path");
-const HtmlWebpackPlugin = require("html-webpack-plugin");
-const CopyWebpackPlugin = require("copy-webpack-plugin");
+const CopyPlugin = require("copy-webpack-plugin");
+
+const ASSET_PATH = "http://localhost:8080/assets/";
 
 module.exports = {
   output: {
-    publicPath: "/",
-    chunkFilename: "static/[name].bundle.js",
-    filename: "static/main.js"
+    publicPath: ASSET_PATH,
+    chunkFilename: "[name].bundle.js",
+    filename: "main.js",
+    path: path.resolve(__dirname, "../priv/static")
   },
   plugins: [
-    new webpack.HotModuleReplacementPlugin(),
-    new HtmlWebpackPlugin({
-      template: path.join(__dirname, "./public/index.html")
-    }),
-    new CopyWebpackPlugin(
-      [
-        {
-          from: "public/favicon.ico"
-        },
-        {
-          from: "public/manifest.json"
-        }
-      ],
-      {}
-    )
+    new CopyPlugin([{ from: "static/", to: "../static" }]),
+    new webpack.DefinePlugin({
+      "process.env.ASSET_PATH": JSON.stringify(ASSET_PATH)
+    })
   ],
   module: {
     rules: [
@@ -53,6 +44,23 @@ module.exports = {
       },
       {
         test: /\.elm$/,
+        exclude: /(node_modules|elm-stuff)/,
+        use: [
+          {
+            loader: "string-replace-loader",
+            options: {
+              multiple: [
+                {
+                  search: "%ASSET_PATH%",
+                  replace: ASSET_PATH
+                }
+              ]
+            }
+          }
+        ]
+      },
+      {
+        test: /\.elm$/,
         exclude: [/elm-stuff/, /node_modules/],
         loader: "elm-webpack-loader",
         options: {
@@ -66,10 +74,6 @@ module.exports = {
   devServer: {
     inline: true,
     stats: { colors: true },
-    compress: true,
-    contentBase: "./public",
-    watchContentBase: true,
-    hot: true,
     overlay: true,
     historyApiFallback: {
       disableDotRule: true
