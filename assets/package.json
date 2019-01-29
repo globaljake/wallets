@@ -12,11 +12,9 @@
     "@babel/preset-stage-2": "7.0.0-beta.46",
     "@webcomponents/custom-elements": "1.2.1",
     "babel-loader": "8.0.0-beta.4",
-    "compression-webpack-plugin": "^2.0.0",
     "copy-webpack-plugin": "^4.5.3",
     "css-loader": "^1.0.0",
     "elm-webpack-loader": "^5.0.0",
-    "html-webpack-plugin": "3.2.0",
     "mini-css-extract-plugin": "^0.4.4",
     "newless": "^0.3.0",
     "optimize-css-assets-webpack-plugin": "^5.0.1",
@@ -29,7 +27,6 @@
     "tailwindcss": "^0.7.2",
     "terser-webpack-plugin": "^1.1.0",
     "webpack": "^4.20.2",
-    "webpack-cli": "^3.1.2",
     "webpack-dev-server": "^3.1.9"
   }
 }
