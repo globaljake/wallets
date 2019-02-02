@@ -47,7 +47,7 @@ view model =
     { title = "Home"
     , content =
         Html.div [ Attributes.class "w-full h-full" ]
-            [ Html.div [ Attributes.class "flex flex-col" ]
+            [ Html.div [ Attributes.class "flex h-full flex-col" ]
                 [ Html.div [ Attributes.class "flex items-end h-10 justify-between" ]
                     [ Html.button
                         [ Attributes.class "w-8 h-8 border-2 border-white rounded-full"
@@ -64,7 +64,7 @@ view model =
                         [ Icon.view { alt = "categories", icon = Icon.List }
                         ]
                     ]
-                , Html.div [ Attributes.class "flex justify-center items-center h-64 my-8" ]
+                , Html.div [ Attributes.class "flex flex-1 justify-center items-center my-8" ]
                     [ Html.div [ Attributes.class "flex justify-center text-white" ]
                         [ Html.span
                             [ Attributes.class "-ml-6"
@@ -93,24 +93,14 @@ view model =
                     , keyPadButton "<"
                     ]
                 , Html.div
-                    [ Attributes.class "flex mt-6" ]
-                    [ Html.div [ Attributes.class "w-1/2" ]
+                    [ Attributes.class "flex my-6" ]
+                    [ Html.div [ Attributes.class "w-full" ]
                         [ Html.button
-                            [ Attributes.class "p-5 mr-px rounded-l-lg w-full"
+                            [ Attributes.class "p-5 rounded-lg w-full"
                             , Attributes.style "background-color" "rgba(255,255,255,.1)"
                             ]
                             [ Html.span [ Attributes.class "text-white font-medium text-xl" ]
-                                [ Html.text "Credit"
-                                ]
-                            ]
-                        ]
-                    , Html.div [ Attributes.class "w-1/2" ]
-                        [ Html.button
-                            [ Attributes.class "p-5 ml-px rounded-r-lg w-full"
-                            , Attributes.style "background-color" "rgba(255,255,255,.1)"
-                            ]
-                            [ Html.span [ Attributes.class "text-white font-medium text-xl" ]
-                                [ Html.text "Debit"
+                                [ Html.text "Budget"
                                 ]
                             ]
                         ]
