@@ -8,17 +8,12 @@
     <link rel="manifest" href="<%= Routes.static_url(@conn, "/assets/manifest.json") %>"/>
     <link rel="icon" href="<%= Routes.static_url(@conn, "/assets/favicon.ico") %>"/>
     <link href="https://fonts.googleapis.com/css?family=Rubik:300,400,500" rel="stylesheet"/>
-    <%= if Application.get_env(:rollover, :env) == :prod do %>
+    <link href="https://fonts.googleapis.com/css?family=Pacifico" rel="stylesheet"/>
+    <%= if Application.get_env(:wallets, :env) == :prod do %>
       <link rel="stylesheet" href="<%= Routes.static_url(@conn, "/assets/main.css") %>"/>
     <% end %>
-    <title>Rollover</title>
-    <style>
-      html,
-      body {
-        height: 100%;
-        font-family: "Rubik", sans-serif;
-      }
-    </style>
+    <title>Wallets</title>
+    <style> html, body { height: 100%; } </style>
   </head>
   <body>
     <script src="<%= Routes.static_url(@conn, "/assets/main.js") %>"></script>

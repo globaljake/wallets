@@ -11,16 +11,19 @@ type Icon
     | List
     | ChevronLeft
     | ChevronRight
+    | AddCircle
+    | Cog
+    | Wallet
 
 
 view : { alt : String, icon : Icon } -> Html msg
 view config =
-    Html.node "ui-rollover-icon" [ iconName config.icon, iconTitle config.alt ] []
+    Html.node "ui-wallets-icon" [ iconName config.icon, iconTitle config.alt ] []
 
 
 viewDecorative : Icon -> Html msg
 viewDecorative icon =
-    Html.node "ui-rollover-icon" [ iconName icon ] []
+    Html.node "ui-wallets-icon" [ iconName icon ] []
 
 
 
@@ -54,3 +57,12 @@ toString icon =
 
         ChevronRight ->
             "chevron-right"
+
+        AddCircle ->
+            "add-circle"
+
+        Cog ->
+            "cog"
+
+        Wallet ->
+            "wallet"

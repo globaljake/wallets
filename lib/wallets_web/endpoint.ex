@@ -11,7 +11,7 @@ defmodule WalletsWeb.Endpoint do
   # when deploying your static files in production.
   plug Plug.Static,
     at: "/assets",
-    from: :rollover,
+    from: :wallets,
     gzip: true,
     headers: %{"Service-Worker-Allowed" => "/", "Access-Control-Allow-Origin" => "*"}
 
