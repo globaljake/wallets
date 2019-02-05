@@ -29,13 +29,13 @@ import Username exposing (Username)
 type alias Model =
     { session : Session
     , showSettings : Bool
-    , modalState : ()
+    , modalState : Maybe ()
     }
 
 
 init : Session -> ( Model, Cmd Msg )
 init session =
-    ( { session = session, showSettings = False, modalState = () }
+    ( { session = session, showSettings = False, modalState = Just () }
     , Cmd.none
     )
 
@@ -48,11 +48,11 @@ feedMock : List ( String, Int )
 feedMock =
     [ ( "Shopping", 2 )
     , ( "Groceries", -2 )
+    , ( "Groceries", 2 )
     , ( "Groceries", -2 )
     , ( "Groceries", -2 )
     , ( "Groceries", -2 )
-    , ( "Groceries", -2 )
-    , ( "Groceries", -2 )
+    , ( "Groceries", 2 )
     , ( "Groceries", -2 )
     , ( "Groceries", -2 )
     , ( "Groceries", -2 )
@@ -69,64 +69,90 @@ view : Model -> { title : String, content : Html Msg }
 view model =
     { title = "Home"
     , content =
-        Html.div
-            [ Attributes.id "home-page-scroll-view"
-            , Attributes.class "flex flex-col h-full overflow-auto scrolling-touch relative"
+        Html.div [ Attributes.class "overflow-hidden h-full relative" ]
+            [ content model
+            , modal model
             ]
-            [ Html.div [ Attributes.class "py-5 border-b" ]
-                [ Html.div [ Attributes.class "flex pt-6 sticky pin-t bg-grey-light" ]
-                    [ Html.div [ Attributes.class "flex w-full items-center py-5 px-6" ]
-                        [ Html.button
-                            [ Attributes.class "w-8 h-8 border-2 border-grey-dark rounded-full"
-                            , Attributes.style "background-image" "url(https://github.com/globaljake.png)"
-                            , Attributes.style "background-size" "contain"
-                            ]
-                            []
-                        , logo
-                        , Html.button
-                            [ Events.onClick SettingsCogClicked
-                            , Attributes.class "overflow-hidden"
-                            ]
-                            [ Html.span
-                                [ Attributes.classList
-                                    [ ( "flex h-8 w-8", True )
-                                    , ( "text-grey-dark", not model.showSettings )
-                                    , ( "text-grey rotate-1/16", model.showSettings )
-                                    ]
-                                ]
-                                [ Icon.view { alt = "Settings", icon = Icon.Cog } ]
-                            ]
-                        ]
-                    ]
-                , Html.div [ Attributes.class "flex flex-col items-center" ]
-                    [ Html.span [ Attributes.class "text-5xl font-medium leading-none py-5" ]
-                        [ Html.text "$0.00"
-                        ]
-                    , Html.span [ Attributes.class "text-lg pb-10" ]
-                        [ Html.text "Monthly Balance"
-                        ]
-                    , if model.showSettings then
-                        Html.span [ Attributes.class "text-lg" ]
-                            [ Html.text "settings stuff"
-                            ]
+    }
 
-                      else
-                        Html.text ""
+
+content : Model -> Html Msg
+content model =
+    Html.div
+        [ Attributes.id "home-page-scroll-view"
+        , Attributes.class "flex flex-col h-full overflow-auto scrolling-touch relative"
+        ]
+        [ Html.div [ Attributes.class "py-5 border-b" ]
+            [ Html.div [ Attributes.class "flex pt-6 sticky pin-t bg-grey-light" ]
+                [ Html.div [ Attributes.class "flex w-full items-center py-5 px-6" ]
+                    [ Html.button
+                        [ Attributes.class "w-8 h-8 border-2 border-grey-dark rounded-full"
+                        , Attributes.style "background-image" "url(https://github.com/globaljake.png)"
+                        , Attributes.style "background-size" "contain"
+                        ]
+                        []
+                    , logo
+                    , Html.button
+                        [ Events.onClick SettingsCogClicked
+                        , Attributes.class "overflow-hidden"
+                        ]
+                        [ Html.span
+                            [ Attributes.classList
+                                [ ( "flex h-8 w-8", True )
+                                , ( "text-grey-dark", not model.showSettings )
+                                , ( "text-grey rotate-1/16", model.showSettings )
+                                ]
+                            ]
+                            [ Icon.view { alt = "Settings", icon = Icon.Cog } ]
+                        ]
                     ]
-                , Html.div []
-                    [ Html.div [] (List.map feedItem feedMock)
-                    , Html.button [ Attributes.class "flex justify-between items-center p-6 text-grey w-full" ]
-                        [ Html.span [ Attributes.class "leading-none font-light italic text-2xl" ]
-                            [ Html.text "Add Wallet"
+                ]
+            , Html.div [ Attributes.class "flex flex-col px-6" ]
+                [ Html.span [ Attributes.class "text-5xl text-center font-medium leading-none py-5" ]
+                    [ Html.text "$0.00"
+                    ]
+                , Html.span [ Attributes.class "text-lg pb-10 text-center" ]
+                    [ Html.text "Monthly Balance"
+                    ]
+                , if model.showSettings then
+                    Html.div [ Attributes.class "flex flex-col" ]
+                        [ Html.span [ Attributes.class "text-grey mb-6" ]
+                            [ Html.text "ACCOUNT"
                             ]
-                        , Html.span [ Attributes.class "h-8 w-8 text-grey" ]
-                            [ Icon.view { alt = "Add Wallet", icon = Icon.AddCircle }
+                        , Html.span [ Attributes.class "text-3xl text-center" ]
+                            [ Html.text "Personal"
                             ]
+                        , Html.button [ Attributes.class "bg-off-white font-medium text-grey-dark rounded-lg w-full py-5 shadow my-6" ]
+                            [ Html.span [] [ Html.text "Add to Balance" ]
+                            ]
+                        ]
+
+                  else
+                    Html.text ""
+                ]
+            , Html.div []
+                [ Html.div [] (List.map feedItem feedMock)
+                , Html.button [ Attributes.class "flex justify-between items-center p-6 text-grey w-full" ]
+                    [ Html.span [ Attributes.class "leading-none font-light italic text-2xl" ]
+                        [ Html.text "Add Wallet"
+                        ]
+                    , Html.span [ Attributes.class "h-8 w-8 text-grey" ]
+                        [ Icon.view { alt = "Add Wallet", icon = Icon.AddCircle }
                         ]
                     ]
                 ]
             ]
-    }
+        ]
+
+
+modal : Model -> Html Msg
+modal model =
+    case model.modalState of
+        Nothing ->
+            Html.text ""
+
+        Just mod ->
+            Html.div [ Attributes.class "absolute bg-green" ] [ Html.text "hey" ]
 
 
 logo : Html msg
