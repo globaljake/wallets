@@ -1,0 +1,29 @@
+@keyframes UiModal-slideInUp {
+  from {
+    transform: translate3d(0, 1000px, 0);
+  }
+
+  to {
+    transform: none;
+  }
+}
+
+@keyframes UiModal-slideOutDown {
+  from {
+    transform: none;
+  }
+
+  to {
+    opacity: 0;
+    transform: translate3d(0, 1000px, 0);
+  }
+}
+
+.UiModal-animation {
+  animation-duration: 300ms;
+  animation-timing-function: cubic-bezier(0.25, 0.1, 0.25, 1);
+}
+
+.UiModal-slideInUp {
+  animation-name: UiModal-slideInUp;
+}

@@ -2,4 +2,6 @@
 
 @tailwind components;
 
+@import "./Ui/Modal.css";
+
 @tailwind utilities;
