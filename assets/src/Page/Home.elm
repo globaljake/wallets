@@ -13,6 +13,7 @@ import Http
 import Loading
 import Log
 import Page
+import Page.Home.Modal as Modal
 import PaginatedList exposing (PaginatedList)
 import Session exposing (Session)
 import Task exposing (Task)
@@ -30,7 +31,7 @@ import Username exposing (Username)
 type alias Model =
     { session : Session
     , showSettings : Bool
-    , modalState : Maybe ()
+    , modalState : Maybe Modal.Model
     }
 
 
@@ -72,7 +73,17 @@ view model =
     , content =
         Html.div [ Attributes.class "overflow-hidden h-full relative" ]
             [ content model
-            , modal model
+            , case model.modalState of
+                Nothing ->
+                    Html.text ""
+
+                Just ms ->
+                    Modal.display
+                        { body =
+                            Modal.view ms
+                                |> Html.map ModalMsg
+                        , onClose = SetModal Nothing
+                        }
             ]
     }
 
@@ -123,7 +134,10 @@ content model =
                         , Html.span [ Attributes.class "text-3xl text-center" ]
                             [ Html.text "Personal"
                             ]
-                        , Html.button [ Attributes.class "bg-off-white font-medium text-grey-dark rounded-lg w-full py-5 shadow my-6" ]
+                        , Html.button
+                            [ Events.onClick <| SetModal (Just Modal.AddWalletModal)
+                            , Attributes.class "bg-off-white font-medium text-grey-dark rounded-lg w-full py-5 shadow my-6"
+                            ]
                             [ Html.span [] [ Html.text "Add to Balance" ]
                             ]
                         ]
@@ -133,7 +147,10 @@ content model =
                 ]
             , Html.div []
                 [ Html.div [] (List.map feedItem feedMock)
-                , Html.button [ Attributes.class "flex justify-between items-center p-6 text-grey w-full" ]
+                , Html.button
+                    [ Events.onClick <| SetModal (Just Modal.AddWalletModal)
+                    , Attributes.class "flex justify-between items-center p-6 text-grey w-full"
+                    ]
                     [ Html.span [ Attributes.class "leading-none font-light italic text-2xl" ]
                         [ Html.text "Add Wallet"
                         ]
@@ -144,16 +161,6 @@ content model =
                 ]
             ]
         ]
-
-
-modal : Model -> Html Msg
-modal model =
-    case model.modalState of
-        Nothing ->
-            Html.text ""
-
-        Just mod ->
-            Modal.view (addWalletView model)
 
 
 logo : Html msg
@@ -280,23 +287,48 @@ keyPadButton label =
 type Msg
     = GotSession Session
     | SettingsCogClicked
+    | ModalMsg Modal.Msg
+    | SetModal (Maybe Modal.Modal)
     | NoOp
+
+
+
+-- type ModalMsg
+--     = AddWalletMsg AddWallet.Msg
+--     | AddToBalanceMsg AddToBalance.Msg
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
+    let
+        session =
+            toSession model
+    in
     case msg of
-        GotSession session ->
-            ( { model | session = session }
+        GotSession newSession ->
+            ( { model | session = newSession }
             , Cmd.none
             )
 
         SettingsCogClicked ->
-            ( { model | showSettings = not model.showSettings, modalState = Just () }
+            ( { model | showSettings = not model.showSettings }
             , Dom.getViewportOf "home-page-scroll-view"
                 |> Task.andThen (\info -> Dom.setViewportOf "home-page-scroll-view" 0 0)
                 |> Task.attempt (\_ -> NoOp)
             )
+
+        ModalMsg subMsg ->
+            ( model, Cmd.none )
+
+        SetModal maybeModal ->
+            case maybeModal of
+                Nothing ->
+                    ( { model | modalState = Nothing }, Cmd.none )
+
+                Just modal ->
+                    Modal.init session modal
+                        |> Tuple.mapFirst (\ms -> { model | modalState = Just ms })
+                        |> Tuple.mapSecond (Cmd.map ModalMsg)
 
         NoOp ->
             ( model, Cmd.none )
