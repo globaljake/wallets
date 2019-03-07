@@ -3,7 +3,7 @@ import CustomElements from "./CustomElements";
 const load = _app => {
   return import(/* webpackChunkName: "icon-svg" */ "./Icon.svg").then(text => {
     CustomElements.define(
-      "ui-icon-injector",
+      "ui-wallets-icon-injector",
       HTMLElement =>
         class extends HTMLElement {
           connectedCallback() {

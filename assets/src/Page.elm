@@ -7,9 +7,11 @@ import Constants
 import Html exposing (Html)
 import Html.Attributes as Attributes
 import Html.Events as Events
+import Json.Encode exposing (Value)
 import Route exposing (Route)
 import Session exposing (Session)
 import Ui.IconInjector as IconInjector
+import Ui.Transition as Transition
 import Username exposing (Username)
 import Viewer exposing (Viewer)
 
@@ -17,6 +19,7 @@ import Viewer exposing (Viewer)
 type Page
     = Other
     | Home
+    | Profile
     | Login
     | Register
 
@@ -25,14 +28,13 @@ view : Maybe Viewer -> Page -> { title : String, content : Html msg } -> Documen
 view maybeViewer page { title, content } =
     { title = title ++ " - Wallets"
     , body =
-        [ IconInjector.view
-        , Html.div
-            [ Attributes.class "h-full text-grey-dark font-sans bg-grey-light flex justify-center overflow-y-auto scrolling-touch"
+        [ Html.main_
+            [ Attributes.class "h-full text-grey-dark font-sans bg-grey-light flex justify-center "
             ]
-            [ Html.div [ Attributes.class "max-w-xs w-full sm:flex hidden flex-col items-center" ]
-                [ Html.text "desktop"
+            [ IconInjector.view
+            , Html.div [ Attributes.class "w-full h-full sm:hidden" ]
+                [ Transition.container { content = content }
                 ]
-            , Html.div [ Attributes.class "w-full h-full sm:hidden" ] [ content ]
             ]
         ]
     }

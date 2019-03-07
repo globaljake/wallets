@@ -2,6 +2,6 @@
 
 @tailwind components;
 
-@import "./Ui/Modal.css";
+/* @import "./Ui/Modal.css"; */
 
 @tailwind utilities;

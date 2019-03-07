@@ -5,4 +5,4 @@ import Html exposing (Html)
 
 view : Html msg
 view =
-    Html.node "ui-icon-injector" [] []
+    Html.node "ui-wallets-icon-injector" [] []

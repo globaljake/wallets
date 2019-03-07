@@ -14,6 +14,7 @@ import Username exposing (Username)
 
 type Route
     = Home
+    | Profile
     | Root
     | Login
     | Logout
@@ -24,6 +25,7 @@ parser : Parser (Route -> a) a
 parser =
     oneOf
         [ Parser.map Home Parser.top
+        , Parser.map Profile (s "profile")
         , Parser.map Login (s "login")
         , Parser.map Logout (s "logout")
         , Parser.map Register (s "register")
@@ -46,11 +48,7 @@ replaceUrl key route =
 
 fromUrl : Url -> Maybe Route
 fromUrl url =
-    -- The RealWorld spec treats the fragment like a path.
-    -- This makes it *literally* the path, so we can proceed
-    -- with parsing as if it had been a normal path all along.
-    { url | path = Maybe.withDefault "" url.fragment, fragment = Nothing }
-        |> Parser.parse parser
+    Parser.parse parser url
 
 
 
@@ -65,6 +63,9 @@ routeToString page =
                 Home ->
                     []
 
+                Profile ->
+                    [ "profile" ]
+
                 Root ->
                     []
 
@@ -77,4 +78,4 @@ routeToString page =
                 Register ->
                     [ "register" ]
     in
-    "#/" ++ String.join "/" pieces
+    "/" ++ String.join "/" pieces

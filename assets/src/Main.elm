@@ -11,11 +11,14 @@ import Page.Blank as Blank
 import Page.Home as Home
 import Page.Login as Login
 import Page.NotFound as NotFound
+import Page.Profile as Profile
 import Page.Register as Register
+import Process
 import Route exposing (Route)
 import Session exposing (Session)
 import Task
 import Time
+import Ui.Transition as Transition
 import Url exposing (Url)
 import Username exposing (Username)
 import Viewer exposing (Viewer)
@@ -25,6 +28,7 @@ type Model
     = Redirect Session
     | NotFound Session
     | Home Home.Model
+    | Profile Profile.Model
     | Login Login.Model
     | Register Register.Model
 
@@ -63,7 +67,10 @@ view model =
             viewPage Page.Other (\_ -> Ignored) NotFound.view
 
         Home home ->
-            viewPage Page.Home GotHomeMsg (Home.view home)
+            viewPage Page.Home HomeMsg (Home.view home)
+
+        Profile profile ->
+            viewPage Page.Profile ProfileMsg (Profile.view profile)
 
         Login login ->
             viewPage Page.Other GotLoginMsg (Login.view login)
@@ -81,7 +88,9 @@ type Msg
     | ChangedRoute (Maybe Route)
     | ChangedUrl Url
     | ClickedLink Browser.UrlRequest
-    | GotHomeMsg Home.Msg
+    | TransitionSet (Maybe Url)
+    | HomeMsg Home.Msg
+    | ProfileMsg Profile.Msg
     | GotLoginMsg Login.Msg
     | GotRegisterMsg Register.Msg
     | GotSession Session
@@ -98,6 +107,9 @@ toSession page =
 
         Home home ->
             Home.toSession home
+
+        Profile profile ->
+            Home.toSession profile
 
         Login login ->
             Login.toSession login
@@ -124,7 +136,11 @@ changeRouteTo maybeRoute model =
 
         Just Route.Home ->
             Home.init session
-                |> updateWith Home GotHomeMsg model
+                |> updateWith Home HomeMsg model
+
+        Just Route.Profile ->
+            Profile.init session
+                |> updateWith Profile ProfileMsg model
 
         Just Route.Login ->
             Login.init session
@@ -133,6 +149,19 @@ changeRouteTo maybeRoute model =
         Just Route.Register ->
             Register.init session
                 |> updateWith Register GotRegisterMsg model
+
+
+transitionDirection : Maybe Route -> Model -> Transition.Direction
+transitionDirection maybeRoute model =
+    case ( model, maybeRoute ) of
+        ( Home _, Just Route.Profile ) ->
+            Transition.Right
+
+        ( Profile _, Just Route.Home ) ->
+            Transition.Left
+
+        _ ->
+            Transition.Left
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -144,30 +173,26 @@ update msg model =
         ( ClickedLink urlRequest, _ ) ->
             case urlRequest of
                 Browser.Internal url ->
-                    case url.fragment of
-                        Nothing ->
-                            -- If we got a link that didn't include a fragment,
-                            -- it's from one of those (href "") attributes that
-                            -- we have to include to make the RealWorld CSS work.
-                            --
-                            -- In an application doing path routing instead of
-                            -- fragment-based routing, this entire
-                            -- `case url.fragment of` expression this comment
-                            -- is inside would be unnecessary.
-                            ( model, Cmd.none )
-
-                        Just _ ->
-                            ( model
-                            , Nav.pushUrl (Session.navKey (toSession model)) (Url.toString url)
-                            )
+                    ( model
+                    , Nav.pushUrl (Session.navKey (toSession model)) (Url.toString url)
+                    )
 
                 Browser.External href ->
                     ( model
                     , Nav.load href
                     )
 
-        ( ChangedUrl url, _ ) ->
+        ( TransitionSet (Just url), _ ) ->
             changeRouteTo (Route.fromUrl url) model
+
+        ( ChangedUrl url, _ ) ->
+            ( model
+            , Cmd.batch
+                [ model
+                    |> transitionDirection (Route.fromUrl url)
+                    |> Transition.setup url
+                ]
+            )
 
         ( ChangedRoute route, _ ) ->
             changeRouteTo route model
@@ -180,9 +205,13 @@ update msg model =
             Register.update subMsg register
                 |> updateWith Register GotRegisterMsg model
 
-        ( GotHomeMsg subMsg, Home home ) ->
+        ( HomeMsg subMsg, Home home ) ->
             Home.update subMsg home
-                |> updateWith Home GotHomeMsg model
+                |> updateWith Home HomeMsg model
+
+        ( ProfileMsg subMsg, Profile profile ) ->
+            Profile.update subMsg profile
+                |> updateWith Profile ProfileMsg model
 
         ( GotSession session, Redirect _ ) ->
             ( Redirect session
@@ -207,21 +236,27 @@ updateWith toModel toMsg model ( subModel, subCmd ) =
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
-    case model of
-        NotFound _ ->
-            Sub.none
+    Sub.batch
+        [ Transition.subscription (TransitionSet << Url.fromString)
+        , case model of
+            NotFound _ ->
+                Sub.none
 
-        Redirect _ ->
-            Session.changes GotSession (Session.navKey (toSession model))
+            Redirect _ ->
+                Session.changes GotSession (Session.navKey (toSession model))
 
-        Home home ->
-            Sub.map GotHomeMsg (Home.subscriptions home)
+            Home home ->
+                Sub.map HomeMsg (Home.subscriptions home)
 
-        Login login ->
-            Sub.map GotLoginMsg (Login.subscriptions login)
+            Profile profile ->
+                Sub.map ProfileMsg (Profile.subscriptions profile)
 
-        Register register ->
-            Sub.map GotRegisterMsg (Register.subscriptions register)
+            Login login ->
+                Sub.map GotLoginMsg (Login.subscriptions login)
+
+            Register register ->
+                Sub.map GotRegisterMsg (Register.subscriptions register)
+        ]
 
 
 

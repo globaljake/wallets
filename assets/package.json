@@ -6,6 +6,9 @@
     "build": "webpack --mode production --config webpack.prod.config.js",
     "start": "webpack-dev-server --mode development --config webpack.dev.config.js"
   },
+  "prettier": {
+    "printWidth": 100
+  },
   "devDependencies": {
     "@babel/core": "7.0.0-beta.46",
     "@babel/preset-env": "7.0.0-beta.46",

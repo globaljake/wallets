@@ -2,7 +2,7 @@ const webpack = require("webpack");
 const path = require("path");
 const CopyPlugin = require("copy-webpack-plugin");
 
-const ASSET_PATH = "http://192.168.86.63:8080/assets/";
+const ASSET_PATH = "http://192.168.86.70:8080/assets/";
 
 module.exports = {
   output: {
@@ -66,7 +66,7 @@ module.exports = {
         options: {
           cwd: __dirname,
           runtimeOptions: "-A128m -H128m -n8m",
-          debug: false
+          debug: true
         }
       }
     ]

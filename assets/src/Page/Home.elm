@@ -10,16 +10,15 @@ import Html exposing (Html)
 import Html.Attributes as Attributes
 import Html.Events as Events
 import Http
-import Loading
-import Log
 import Page
 import Page.Home.Modal as Modal
-import PaginatedList exposing (PaginatedList)
+import Route
 import Session exposing (Session)
 import Task exposing (Task)
 import Time
 import Ui.Icon as Icon
 import Ui.Modal as Modal
+import Ui.Transition as Transition
 import Url.Builder
 import Username exposing (Username)
 
@@ -30,15 +29,14 @@ import Username exposing (Username)
 
 type alias Model =
     { session : Session
-    , showSettings : Bool
     , modalState : Maybe Modal.Model
     }
 
 
 init : Session -> ( Model, Cmd Msg )
 init session =
-    ( { session = session, showSettings = False, modalState = Nothing }
-    , Cmd.none
+    ( { session = session, modalState = Nothing }
+    , Transition.start
     )
 
 
@@ -91,29 +89,23 @@ view model =
 content : Model -> Html Msg
 content model =
     Html.div
-        [ Attributes.id "home-page-scroll-view"
-        , Attributes.class "flex flex-col h-full overflow-auto scrolling-touch relative"
+        [ Attributes.class "flex flex-col h-full overflow-auto scrolling-touch relative"
         ]
         [ Html.div [ Attributes.class "py-5 border-b" ]
             [ Html.div [ Attributes.class "flex pt-6 sticky pin-t bg-grey-light" ]
                 [ Html.div [ Attributes.class "flex w-full items-center py-5 px-6" ]
-                    [ Html.button
-                        [ Attributes.class "w-8 h-8 border-2 border-grey-dark rounded-full"
-                        , Attributes.style "background-image" "url(https://github.com/globaljake.png)"
-                        , Attributes.style "background-size" "contain"
-                        ]
-                        []
-                    , logo
-                    , Html.button
-                        [ Events.onClick SettingsCogClicked
-                        , Attributes.class "overflow-hidden"
-                        ]
+                    [ Html.a [ Route.href Route.Profile ]
                         [ Html.span
-                            [ Attributes.classList
-                                [ ( "flex h-8 w-8", True )
-                                , ( "text-grey-dark", not model.showSettings )
-                                , ( "text-grey rotate-1/16", model.showSettings )
-                                ]
+                            [ Attributes.class "flex w-8 h-8 border-2 border-grey-dark rounded-full"
+                            , Attributes.style "background-image" "url(https://github.com/globaljake.png)"
+                            , Attributes.style "background-size" "contain"
+                            ]
+                            []
+                        ]
+                    , logo
+                    , Html.button []
+                        [ Html.span
+                            [ Attributes.class "flex h-8 w-8 text-grey-dark"
                             ]
                             [ Icon.view { alt = "Settings", icon = Icon.Cog } ]
                         ]
@@ -126,24 +118,6 @@ content model =
                 , Html.span [ Attributes.class "text-lg pb-10 text-center" ]
                     [ Html.text "Monthly Balance"
                     ]
-                , if model.showSettings then
-                    Html.div [ Attributes.class "flex flex-col" ]
-                        [ Html.span [ Attributes.class "text-grey mb-6" ]
-                            [ Html.text "ACCOUNT"
-                            ]
-                        , Html.span [ Attributes.class "text-3xl text-center" ]
-                            [ Html.text "Personal"
-                            ]
-                        , Html.button
-                            [ Events.onClick <| SetModal (Just Modal.AddWalletModal)
-                            , Attributes.class "bg-off-white font-medium text-grey-dark rounded-lg w-full py-5 shadow my-6"
-                            ]
-                            [ Html.span [] [ Html.text "Add to Balance" ]
-                            ]
-                        ]
-
-                  else
-                    Html.text ""
                 ]
             , Html.div []
                 [ Html.div [] (List.map feedItem feedMock)
@@ -311,10 +285,8 @@ update msg model =
             )
 
         SettingsCogClicked ->
-            ( { model | showSettings = not model.showSettings }
-            , Dom.getViewportOf "home-page-scroll-view"
-                |> Task.andThen (\info -> Dom.setViewportOf "home-page-scroll-view" 0 0)
-                |> Task.attempt (\_ -> NoOp)
+            ( model
+            , Cmd.none
             )
 
         ModalMsg subMsg ->
