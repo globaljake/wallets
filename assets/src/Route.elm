@@ -13,22 +13,17 @@ import Username exposing (Username)
 
 
 type Route
-    = Home
+    = Root
     | Profile
-    | Root
-    | Login
     | Logout
-    | Register
 
 
 parser : Parser (Route -> a) a
 parser =
     oneOf
-        [ Parser.map Home Parser.top
+        [ Parser.map Root Parser.top
         , Parser.map Profile (s "profile")
-        , Parser.map Login (s "login")
         , Parser.map Logout (s "logout")
-        , Parser.map Register (s "register")
         ]
 
 
@@ -60,22 +55,13 @@ routeToString page =
     let
         pieces =
             case page of
-                Home ->
-                    []
-
                 Profile ->
                     [ "profile" ]
 
                 Root ->
                     []
 
-                Login ->
-                    [ "login" ]
-
                 Logout ->
                     [ "logout" ]
-
-                Register ->
-                    [ "register" ]
     in
     "/" ++ String.join "/" pieces

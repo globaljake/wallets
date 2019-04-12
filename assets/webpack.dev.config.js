@@ -2,7 +2,7 @@ const webpack = require("webpack");
 const path = require("path");
 const CopyPlugin = require("copy-webpack-plugin");
 
-const ASSET_PATH = "http://192.168.86.70:8080/assets/";
+const ASSET_PATH = "http://192.168.86.84:8080/assets/";
 
 module.exports = {
   output: {
@@ -31,10 +31,7 @@ module.exports = {
         use: {
           loader: "babel-loader",
           options: {
-            presets: [
-              "@babel/preset-env",
-              ["@babel/preset-stage-2", { decoratorsLegacy: true }]
-            ]
+            presets: ["@babel/preset-env", ["@babel/preset-stage-2", { decoratorsLegacy: true }]]
           }
         }
       },
@@ -65,8 +62,8 @@ module.exports = {
         loader: "elm-webpack-loader",
         options: {
           cwd: __dirname,
-          runtimeOptions: "-A128m -H128m -n8m",
-          debug: true
+          runtimeOptions: "-A128m -H128m -n8m"
+          // debug: true
         }
       }
     ]

@@ -5,9 +5,10 @@ module Page.Login exposing (Model, Msg, init, subscriptions, toSession, update, 
 
 import Api exposing (Cred)
 import Browser.Navigation as Nav
-import Html exposing (..)
-import Html.Attributes exposing (..)
-import Html.Events exposing (..)
+import Constants
+import Html exposing (Html)
+import Html.Attributes as Attributes
+import Html.Events as Events
 import Http
 import Json.Decode as Decode exposing (Decoder, decodeString, field, string)
 import Json.Decode.Pipeline exposing (optional)
@@ -23,42 +24,7 @@ import Viewer exposing (Viewer)
 
 type alias Model =
     { session : Session
-    , problems : List Problem
-    , form : Form
-    }
-
-
-{-| Recording validation problems on a per-field basis facilitates displaying
-them inline next to the field where the error occurred.
-
-I implemented it this way out of habit, then realized the spec called for
-displaying all the errors at the top. I thought about simplifying it, but then
-figured it'd be useful to show how I would normally model this data - assuming
-the intended UX was to render errors per field.
-
-(The other part of this is having a view function like this:
-
-viewFieldErrors : ValidatedField -> List Problem -> Html msg
-
-...and it filters the list of problems to render only InvalidEntry ones for the
-given ValidatedField. That way you can call this:
-
-viewFieldErrors Email problems
-
-...next to the `email` field, and call `viewFieldErrors Password problems`
-next to the `password` field, and so on.
-
-The `LoginError` should be displayed elsewhere, since it doesn't correspond to
-a particular field.
-
--}
-type Problem
-    = InvalidEntry ValidatedField String
-    | ServerError String
-
-
-type alias Form =
-    { email : String
+    , email : String
     , password : String
     }
 
@@ -66,11 +32,8 @@ type alias Form =
 init : Session -> ( Model, Cmd msg )
 init session =
     ( { session = session
-      , problems = []
-      , form =
-            { email = ""
-            , password = ""
-            }
+      , email = ""
+      , password = ""
       }
     , Cmd.none
     )
@@ -84,18 +47,55 @@ view : Model -> { title : String, content : Html Msg }
 view model =
     { title = "Login"
     , content =
-        div [ class "cred-page" ]
-            [ div [ class "container page" ]
-                [ div [ class "row" ]
-                    [ div [ class "col-md-6 offset-md-3 col-xs-12" ]
-                        [ h1 [ class "text-xs-center" ] [ text "Sign in" ]
-                        , p [ class "text-xs-center" ]
-                            [ a [ Route.href Route.Register ]
-                                [ text "Need an account?" ]
-                            ]
-                        , ul [ class "error-messages" ]
-                            (List.map viewProblem model.problems)
-                        , viewForm model.form
+        Html.div [ Attributes.class "flex flex-col h-full justify-end" ]
+            [ Html.div
+                [ Attributes.class "flex flex-1 relative items-end"
+                , Attributes.style "background" "linear-gradient(#f3f3f3 0%,#e3e3e3 100%)"
+                ]
+                [ Html.div [ Attributes.class "flex flex-col items-center text-center px-6 mb-24" ]
+                    [ Html.span [ Attributes.class "font-serif text-5xl mb-6" ]
+                        [ Html.text "Wallets"
+                        ]
+                    , Html.span [ Attributes.class "font-light text-lg mx-10 leading-normal" ]
+                        [ Html.text "Make It Easy To Stay On Top Of Your Budget!"
+                        ]
+                    ]
+                , Html.div
+                    [ Attributes.class "absolute pin-b w-full h-32 -m-px"
+                    , Attributes.style "background" ("url('" ++ Constants.toAsset "images/test-2.svg" ++ "')")
+                    , Attributes.style "background-repeat" "no-repeat"
+                    , Attributes.style "background-size" "contain"
+                    , Attributes.style "background-position" "bottom"
+                    ]
+                    []
+
+                -- , Html.div []
+                --     [
+                --          Html.img [ Attributes.src <| Constants.toAsset "images/test.svg" ] []
+                --     ]
+                ]
+            , Html.div [ Attributes.class "flex flex-col p-6" ]
+                [ Html.div [ Attributes.class "py-4" ]
+                    [ input
+                        { value = model.email
+                        , placeholder = "Email"
+                        , onInput = EmailEntered
+                        , isRequired = True
+                        , type_ = "text"
+                        }
+                    ]
+                , Html.div [ Attributes.class "py-4" ]
+                    [ input
+                        { value = model.password
+                        , placeholder = "Password"
+                        , onInput = PasswordEntered
+                        , isRequired = True
+                        , type_ = "password"
+                        }
+                    ]
+                , Html.button [ Attributes.class "flex justify-center py-6 my-6" ]
+                    [ Html.span [ Attributes.class "font-medium text-xl text-grey-dark" ]
+                        [ Html.text "Sign In / Sign Up"
                         ]
                     ]
                 ]
@@ -103,107 +103,33 @@ view model =
     }
 
 
-viewProblem : Problem -> Html msg
-viewProblem problem =
-    let
-        errorMessage =
-            case problem of
-                InvalidEntry _ str ->
-                    str
-
-                ServerError str ->
-                    str
-    in
-    li [] [ text errorMessage ]
-
-
-viewForm : Form -> Html Msg
-viewForm form =
-    Html.form [ onSubmit SubmittedForm ]
-        [ fieldset [ class "form-group" ]
-            [ input
-                [ class "form-control form-control-lg"
-                , placeholder "Email"
-                , onInput EnteredEmail
-                , value form.email
-                ]
-                []
-            ]
-        , fieldset [ class "form-group" ]
-            [ input
-                [ class "form-control form-control-lg"
-                , type_ "password"
-                , placeholder "Password"
-                , onInput EnteredPassword
-                , value form.password
-                ]
-                []
-            ]
-        , button [ class "btn btn-lg btn-primary pull-xs-right" ]
-            [ text "Sign in" ]
-        ]
-
-
 
 -- UPDATE
 
 
 type Msg
-    = SubmittedForm
-    | EnteredEmail String
-    | EnteredPassword String
-    | CompletedLogin (Result Http.Error Viewer)
-    | GotSession Session
+    = GotSession Session
+    | EmailEntered String
+    | PasswordEntered String
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
-        SubmittedForm ->
-            case validate model.form of
-                Ok validForm ->
-                    ( { model | problems = [] }
-                    , Http.send CompletedLogin (login validForm)
-                    )
-
-                Err problems ->
-                    ( { model | problems = problems }
-                    , Cmd.none
-                    )
-
-        EnteredEmail email ->
-            updateForm (\form -> { form | email = email }) model
-
-        EnteredPassword password ->
-            updateForm (\form -> { form | password = password }) model
-
-        CompletedLogin (Err error) ->
-            let
-                serverErrors =
-                    Api.decodeErrors error
-                        |> List.map ServerError
-            in
-            ( { model | problems = List.append model.problems serverErrors }
+        GotSession session ->
+            ( { model | session = session }
             , Cmd.none
             )
 
-        CompletedLogin (Ok viewer) ->
-            ( model
-            , Viewer.store viewer
+        EmailEntered email ->
+            ( { model | email = email }
+            , Cmd.none
             )
 
-        GotSession session ->
-            ( { model | session = session }
-            , Route.replaceUrl (Session.navKey session) Route.Home
+        PasswordEntered password ->
+            ( { model | password = password }
+            , Cmd.none
             )
-
-
-{-| Helper function for `update`. Updates the form and returns Cmd.none.
-Useful for recording form fields!
--}
-updateForm : (Form -> Form) -> Model -> ( Model, Cmd Msg )
-updateForm transform model =
-    ( { model | form = transform model.form }, Cmd.none )
 
 
 
@@ -216,100 +142,44 @@ subscriptions model =
 
 
 
--- FORM
-
-
-{-| Marks that we've trimmed the form's fields, so we don't accidentally send
-it to the server without having trimmed it!
--}
-type TrimmedForm
-    = Trimmed Form
-
-
-{-| When adding a variant here, add it to `fieldsToValidate` too!
--}
-type ValidatedField
-    = Email
-    | Password
-
-
-fieldsToValidate : List ValidatedField
-fieldsToValidate =
-    [ Email
-    , Password
-    ]
-
-
-{-| Trim the form and validate its fields. If there are problems, report them!
--}
-validate : Form -> Result (List Problem) TrimmedForm
-validate form =
-    let
-        trimmedForm =
-            trimFields form
-    in
-    case List.concatMap (validateField trimmedForm) fieldsToValidate of
-        [] ->
-            Ok trimmedForm
-
-        problems ->
-            Err problems
-
-
-validateField : TrimmedForm -> ValidatedField -> List Problem
-validateField (Trimmed form) field =
-    List.map (InvalidEntry field) <|
-        case field of
-            Email ->
-                if String.isEmpty form.email then
-                    [ "email can't be blank." ]
-
-                else
-                    []
-
-            Password ->
-                if String.isEmpty form.password then
-                    [ "password can't be blank." ]
-
-                else
-                    []
-
-
-{-| Don't trim while the user is typing! That would be super annoying.
-Instead, trim only on submit.
--}
-trimFields : Form -> TrimmedForm
-trimFields form =
-    Trimmed
-        { email = String.trim form.email
-        , password = String.trim form.password
-        }
-
-
-
--- HTTP
-
-
-login : TrimmedForm -> Http.Request Viewer
-login (Trimmed form) =
-    let
-        user =
-            Encode.object
-                [ ( "email", Encode.string form.email )
-                , ( "password", Encode.string form.password )
-                ]
-
-        body =
-            Encode.object [ ( "user", user ) ]
-                |> Http.jsonBody
-    in
-    Api.login body Viewer.decoder
-
-
-
 -- EXPORT
 
 
 toSession : Model -> Session
 toSession model =
     model.session
+
+
+
+-- INTERNAL
+
+
+type alias InputConfig msg =
+    { value : String
+    , placeholder : String
+    , isRequired : Bool
+    , onInput : String -> msg
+    , type_ : String
+    }
+
+
+input : InputConfig msg -> Html msg
+input config =
+    Html.input
+        [ Attributes.classList
+            [ ( "text-center text-xl text-grey-dark bg-transparent  border-b-2 w-full p-6 outline-none", True )
+            , ( "border-grey-light focus:border-grey", String.isEmpty config.value )
+            , ( "border-grey-dark focus:border-grey-dark", not <| String.isEmpty config.value )
+            ]
+        , Attributes.value config.value
+        , Events.onInput config.onInput
+        , Attributes.placeholder config.placeholder
+        , Attributes.attribute "aria-required" <|
+            if config.isRequired then
+                "true"
+
+            else
+                "false"
+        , Attributes.type_ config.type_
+        ]
+        []

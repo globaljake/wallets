@@ -24,13 +24,14 @@ export default {
               const appNode = this.firstChild;
 
               const pageCloneNode = appNode.cloneNode(true);
+              app.ports.uiTransitionIsSet.send(url);
+              if (!direction) return;
               pageCloneNode.id = "clone";
               pageCloneNode.classList.add("absolute", "pin");
               this.appendChild(pageCloneNode);
 
               this._direction = (direction || "").toLowerCase();
               appNode.classList.add(`offscreen-${opositeTransition(this._direction)}`);
-              app.ports.uiTransitionIsSet.send(url);
             });
 
             app.ports.uiTransitionStart.subscribe(() => {

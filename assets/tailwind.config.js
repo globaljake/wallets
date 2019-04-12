@@ -49,8 +49,8 @@ let colors = {
   "grey-darkest": "#363537",
   "grey-dark": "#464646",
   grey: "#acacac",
-  "grey-light": "#eeeeee",
-  "grey-lightest": "#e6e6e6",
+  "grey-light": "#e6e6e6",
+  "grey-lightest": "#eeeeee",
   "off-white": "#f6f6f6",
   white: "#ffffff",
 
@@ -138,6 +138,7 @@ module.exports = {
       "sans-serif"
     ],
     serif: [
+      "Pacifico",
       "Constantia",
       "Lucida Bright",
       "Lucidabright",
@@ -149,14 +150,7 @@ module.exports = {
       "Georgia",
       "serif"
     ],
-    mono: [
-      "Menlo",
-      "Monaco",
-      "Consolas",
-      "Liberation Mono",
-      "Courier New",
-      "monospace"
-    ]
+    mono: ["Menlo", "Monaco", "Consolas", "Liberation Mono", "Courier New", "monospace"]
   },
 
   /*
@@ -340,10 +334,7 @@ module.exports = {
   |
   */
 
-  borderColors: global.Object.assign(
-    { default: colors["grey-lightest"] },
-    colors
-  ),
+  borderColors: global.Object.assign({ default: colors["grey-light"] }, colors),
 
   /*
   |-----------------------------------------------------------------------------
@@ -838,7 +829,7 @@ module.exports = {
       // center: true,
       // padding: '1rem',
     }),
-    function ({ e, addUtilities }) {
+    function({ e, addUtilities }) {
       const angles = {
         "1/16": "22.5deg",
         "1/8": "45deg",

@@ -29,7 +29,7 @@ view maybeViewer page { title, content } =
     { title = title ++ " - Wallets"
     , body =
         [ Html.main_
-            [ Attributes.class "h-full text-grey-dark font-sans bg-grey-light flex justify-center "
+            [ Attributes.class "h-full text-grey-dark font-sans bg-grey-lightest flex justify-center "
             ]
             [ IconInjector.view
             , Html.div [ Attributes.class "w-full h-full sm:hidden" ]

@@ -69,7 +69,7 @@ view : Model -> { title : String, content : Html Msg }
 view model =
     { title = "Home"
     , content =
-        Html.div [ Attributes.class "overflow-hidden h-full relative" ]
+        Html.div [ Attributes.class "overflow-hidden h-full" ]
             [ content model
             , case model.modalState of
                 Nothing ->

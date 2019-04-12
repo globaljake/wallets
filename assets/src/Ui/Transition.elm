@@ -6,19 +6,38 @@ import Json.Encode as Encode exposing (Value)
 import Url exposing (Url)
 
 
+port uiTransitionSetup : { url : String, direction : Maybe String } -> Cmd msg
+
+
+setup : Url -> Maybe Direction -> Cmd msg
+setup url direction =
+    uiTransitionSetup <|
+        { url = Url.toString url
+        , direction = Maybe.map directionToString direction
+        }
+
+
 type Direction
     = Left
     | Right
 
 
-type alias Config msg =
-    { content : Html msg }
+directionToString : Direction -> String
+directionToString direction =
+    case direction of
+        Left ->
+            "left"
 
-
-port uiTransitionSetup : { url : String, direction : String } -> Cmd msg
+        Right ->
+            "right"
 
 
 port uiTransitionStart : () -> Cmd msg
+
+
+start : Cmd msg
+start =
+    uiTransitionStart ()
 
 
 port uiTransitionIsSet : (String -> msg) -> Sub msg
@@ -29,23 +48,8 @@ subscription =
     uiTransitionIsSet
 
 
-start : Cmd msg
-start =
-    uiTransitionStart ()
-
-
-setup : Url -> Direction -> Cmd msg
-setup url direction =
-    uiTransitionSetup <|
-        { url = Url.toString url
-        , direction =
-            case direction of
-                Left ->
-                    "left"
-
-                Right ->
-                    "right"
-        }
+type alias Config msg =
+    { content : Html msg }
 
 
 container : Config msg -> Html msg

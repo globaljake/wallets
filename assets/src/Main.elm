@@ -12,7 +12,6 @@ import Page.Home as Home
 import Page.Login as Login
 import Page.NotFound as NotFound
 import Page.Profile as Profile
-import Page.Register as Register
 import Process
 import Route exposing (Route)
 import Session exposing (Session)
@@ -30,7 +29,6 @@ type Model
     | Home Home.Model
     | Profile Profile.Model
     | Login Login.Model
-    | Register Register.Model
 
 
 
@@ -73,10 +71,7 @@ view model =
             viewPage Page.Profile ProfileMsg (Profile.view profile)
 
         Login login ->
-            viewPage Page.Other GotLoginMsg (Login.view login)
-
-        Register register ->
-            viewPage Page.Other GotRegisterMsg (Register.view register)
+            viewPage Page.Other LoginMsg (Login.view login)
 
 
 
@@ -91,8 +86,7 @@ type Msg
     | TransitionSet (Maybe Url)
     | HomeMsg Home.Msg
     | ProfileMsg Profile.Msg
-    | GotLoginMsg Login.Msg
-    | GotRegisterMsg Register.Msg
+    | LoginMsg Login.Msg
     | GotSession Session
 
 
@@ -109,13 +103,10 @@ toSession page =
             Home.toSession home
 
         Profile profile ->
-            Home.toSession profile
+            Profile.toSession profile
 
         Login login ->
             Login.toSession login
-
-        Register register ->
-            Register.toSession register
 
 
 changeRouteTo : Maybe Route -> Model -> ( Model, Cmd Msg )
@@ -124,44 +115,40 @@ changeRouteTo maybeRoute model =
         session =
             toSession model
     in
-    case maybeRoute of
-        Nothing ->
+    case ( Session.viewer session, maybeRoute ) of
+        ( Nothing, Just route ) ->
+            Login.init session
+                |> updateWith Login LoginMsg model
+
+        ( Nothing, Nothing ) ->
+            ( model, Route.replaceUrl (Session.navKey session) Route.Root )
+
+        ( _, Nothing ) ->
             ( NotFound session, Cmd.none )
 
-        Just Route.Root ->
-            ( model, Route.replaceUrl (Session.navKey session) Route.Home )
-
-        Just Route.Logout ->
-            ( model, Api.logout )
-
-        Just Route.Home ->
+        ( _, Just Route.Root ) ->
             Home.init session
                 |> updateWith Home HomeMsg model
 
-        Just Route.Profile ->
+        ( _, Just Route.Logout ) ->
+            ( model, Api.logout )
+
+        ( _, Just Route.Profile ) ->
             Profile.init session
                 |> updateWith Profile ProfileMsg model
 
-        Just Route.Login ->
-            Login.init session
-                |> updateWith Login GotLoginMsg model
 
-        Just Route.Register ->
-            Register.init session
-                |> updateWith Register GotRegisterMsg model
-
-
-transitionDirection : Maybe Route -> Model -> Transition.Direction
-transitionDirection maybeRoute model =
+transition : Maybe Route -> Model -> Maybe Transition.Direction
+transition maybeRoute model =
     case ( model, maybeRoute ) of
         ( Home _, Just Route.Profile ) ->
-            Transition.Right
+            Just Transition.Right
 
-        ( Profile _, Just Route.Home ) ->
-            Transition.Left
+        ( Profile _, Just Route.Root ) ->
+            Just Transition.Left
 
         _ ->
-            Transition.Left
+            Nothing
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -189,7 +176,7 @@ update msg model =
             ( model
             , Cmd.batch
                 [ model
-                    |> transitionDirection (Route.fromUrl url)
+                    |> transition (Route.fromUrl url)
                     |> Transition.setup url
                 ]
             )
@@ -197,13 +184,9 @@ update msg model =
         ( ChangedRoute route, _ ) ->
             changeRouteTo route model
 
-        ( GotLoginMsg subMsg, Login login ) ->
+        ( LoginMsg subMsg, Login login ) ->
             Login.update subMsg login
-                |> updateWith Login GotLoginMsg model
-
-        ( GotRegisterMsg subMsg, Register register ) ->
-            Register.update subMsg register
-                |> updateWith Register GotRegisterMsg model
+                |> updateWith Login LoginMsg model
 
         ( HomeMsg subMsg, Home home ) ->
             Home.update subMsg home
@@ -215,7 +198,7 @@ update msg model =
 
         ( GotSession session, Redirect _ ) ->
             ( Redirect session
-            , Route.replaceUrl (Session.navKey session) Route.Home
+            , Route.replaceUrl (Session.navKey session) Route.Root
             )
 
         ( _, _ ) ->
@@ -252,10 +235,7 @@ subscriptions model =
                 Sub.map ProfileMsg (Profile.subscriptions profile)
 
             Login login ->
-                Sub.map GotLoginMsg (Login.subscriptions login)
-
-            Register register ->
-                Sub.map GotRegisterMsg (Register.subscriptions register)
+                Sub.map LoginMsg (Login.subscriptions login)
         ]
 
 

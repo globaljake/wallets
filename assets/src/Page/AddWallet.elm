@@ -34,11 +34,9 @@ view model =
         [ Html.div [ Attributes.class "flex h-full flex-col" ]
             [ Html.div [ Attributes.class "flex items-end h-10 justify-between" ]
                 [ Html.button
-                    [ Attributes.class "w-8 h-8 border-2 border-white rounded-full"
-                    , Attributes.style "background-image" "url(https://github.com/globaljake.png)"
-                    , Attributes.style "background-size" "contain"
+                    [ Attributes.class "w-8 h-8"
                     ]
-                    []
+                    [ Html.text "x" ]
                 , Html.button
                     [ Attributes.class "text-gray-dark rounded-full px-4 py-2"
                     , Attributes.style "background-color" "rgba(255,255,255,.1)"

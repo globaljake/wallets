@@ -9,7 +9,7 @@ use Mix.Config
 config :wallets, WalletsWeb.Endpoint,
   http: [port: 4000],
   url: [port: 4000],
-  static_url: [scheme: "http", host: "192.168.86.70", port: 8080],
+  static_url: [scheme: "http", host: "192.168.86.84", port: 8080],
   debug_errors: true,
   code_reloader: true,
   check_origin: false,
