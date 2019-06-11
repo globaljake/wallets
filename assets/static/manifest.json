@@ -1,6 +1,6 @@
 {
-  "short_name": "starter",
-  "name": "a simple starter app",
+  "short_name": "Wallets",
+  "name": "a simple budget app",
   "icons": [
     {
       "src": "favicon.ico",

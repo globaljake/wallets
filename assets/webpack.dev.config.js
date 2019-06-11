@@ -2,7 +2,8 @@ const webpack = require("webpack");
 const path = require("path");
 const CopyPlugin = require("copy-webpack-plugin");
 
-const ASSET_PATH = "http://192.168.86.84:8080/assets/";
+// const ASSET_PATH = "http://192.168.86.115:8080/assets/";
+const ASSET_PATH = "http://localhost:8080/assets/";
 
 module.exports = {
   output: {

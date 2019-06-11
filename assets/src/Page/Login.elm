@@ -68,11 +68,6 @@ view model =
                     , Attributes.style "background-position" "bottom"
                     ]
                     []
-
-                -- , Html.div []
-                --     [
-                --          Html.img [ Attributes.src <| Constants.toAsset "images/test.svg" ] []
-                --     ]
                 ]
             , Html.div [ Attributes.class "flex flex-col p-6" ]
                 [ Html.div [ Attributes.class "py-4" ]

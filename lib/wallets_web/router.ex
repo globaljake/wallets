@@ -9,19 +9,22 @@ defmodule WalletsWeb.Router do
     plug :put_secure_browser_headers
     plug :put_layout, false
   end
-
+ 
   pipeline :api do
     plug :accepts, ["json"]
+  end
+
+  scope "/api", WalletsWeb do
+    pipe_through :api
+
+    resources("/users", UserController, only: [:show, :index])
   end
 
   scope "/", WalletsWeb do
     pipe_through :browser
 
-    get "/*path", PageController, :index
+    get("/*path", PageController, :index)
   end
 
-  # Other scopes may use custom stacks.
-  # scope "/api", WalletsWeb do
-  #   pipe_through :api
-  # end
+  
 end

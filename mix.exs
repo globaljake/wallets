@@ -36,6 +36,7 @@ defmodule Wallets.MixProject do
       {:phoenix, "~> 1.4.0"},
       {:phoenix_pubsub, "~> 1.1"},
       {:phoenix_ecto, "~> 4.0"},
+      {:guardian, "~> 1.0"},
       {:ecto_sql, "~> 3.0"},
       {:postgrex, ">= 0.0.0"},
       {:phoenix_html, "~> 2.11"},
