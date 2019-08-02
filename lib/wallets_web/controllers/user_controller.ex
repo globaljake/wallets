@@ -9,4 +9,3 @@ defmodule WalletsWeb.UserController do
     json(conn, %{id: id})
   end
 end
-

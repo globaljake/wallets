@@ -43,7 +43,16 @@ defmodule Wallets.MixProject do
       {:phoenix_live_reload, "~> 1.2", only: :dev},
       {:gettext, "~> 0.11"},
       {:jason, "~> 1.0"},
-      {:plug_cowboy, "~> 2.0"}
+      {:plug_cowboy, "~> 2.0"},
+      {:absinthe, "~> 1.4.0"},
+      {:absinthe_plug, "~> 1.4.0"},
+      {:absinthe_phoenix, "~> 1.4.0"},
+      {:absinthe_relay, "~> 1.4.0"},
+      {:con_cache, "~> 0.13.1"},
+      {:cors_plug, "~> 2.0.0"},
+      {:tesla, "~> 1.2.0"},
+      {:hackney, "~> 1.15.0"},
+      {:distillery, "~> 2.0.0"}
     ]
   end
 

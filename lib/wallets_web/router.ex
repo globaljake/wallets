@@ -10,8 +10,15 @@ defmodule WalletsWeb.Router do
     plug :put_layout, false
   end
  
+  def put_test(conn, ops) do
+      IO.inspect ops
+      conn
+  end
+
   pipeline :api do
     plug :accepts, ["json"]
+    plug :accepts, ["json"]
+    plug :put_test, ["XXXXXXXXAHH"]
   end
 
   scope "/api", WalletsWeb do
