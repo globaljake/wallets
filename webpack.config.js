@@ -1,6 +1,7 @@
 const path = require("path");
 const MiniCssExtractPlugin = require("mini-css-extract-plugin");
 const CopyPlugin = require("copy-webpack-plugin");
+const HtmlWebpackPlugin = require("html-webpack-plugin");
 
 module.exports = (env, options) => ({
   entry: {
@@ -10,7 +11,7 @@ module.exports = (env, options) => ({
   output: {
     publicPath: "/",
     chunkFilename: "[name].bundle.js",
-    filename: "[name].js",
+    filename: "[name].[contenthash].js",
     path: path.resolve(__dirname, "./dist")
   },
   module: {
@@ -43,7 +44,8 @@ module.exports = (env, options) => ({
     ]
   },
   plugins: [
-    new MiniCssExtractPlugin({ filename: "[name].css" }),
+    new HtmlWebpackPlugin({ template: "src/Web/index.html", chunks: ["web"] }),
+    new MiniCssExtractPlugin({ filename: "[name].[contenthash].css" }),
     new CopyPlugin([{ from: "public/", to: "../dist" }])
   ]
 });

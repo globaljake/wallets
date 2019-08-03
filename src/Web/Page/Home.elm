@@ -56,7 +56,7 @@ view model =
                 , Html.div [ Attributes.class "rounded-full h-10 w-10 bg-red-300" ] []
                 ]
             , Html.div [ Attributes.class "my-4 leading-none text-gray-500" ]
-                [ Html.span [] [ Html.text "JULY 2019sssssssss" ]
+                [ Html.span [] [ Html.text "JULY 2019" ]
                 ]
             , Html.div [ Attributes.class "flex flex-col" ]
                 (List.map item itemsMock)
@@ -105,7 +105,7 @@ item config =
                 ]
             , Html.div [ Attributes.class "text-left" ]
                 [ if config.budget == config.left then
-                    Html.span [ Attributes.class "text-sm text-green-400" ]
+                    Html.span [ Attributes.class "text-sm font-semibold text-green-400" ]
                         [ Html.text "Ready to Spend!"
                         ]
 
