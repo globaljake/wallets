@@ -131,13 +131,31 @@ changeRouteTo maybeRoute model =
                 |> updateWith Home HomeMsg model
 
 
+
+-- SUBSCRIPTIONS --
+
+
+subscriptions : Model -> Sub Msg
+subscriptions model =
+    case model of
+        Redirect session ->
+            Sub.none
+
+        NotFound session ->
+            Sub.none
+
+        Home subModel ->
+            Home.subscriptions subModel
+                |> Sub.map HomeMsg
+
+
 main : Program Value Model Msg
 main =
     Browser.application
         { init = init
         , view = view
         , update = update
-        , subscriptions = \_ -> Sub.none
+        , subscriptions = subscriptions
         , onUrlRequest = ClickedLink
         , onUrlChange = ChangedUrl
         }

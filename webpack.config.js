@@ -2,6 +2,7 @@ const path = require("path");
 const MiniCssExtractPlugin = require("mini-css-extract-plugin");
 const CopyPlugin = require("copy-webpack-plugin");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
+const { CleanWebpackPlugin } = require("clean-webpack-plugin");
 
 module.exports = (env, options) => ({
   entry: {
@@ -44,6 +45,7 @@ module.exports = (env, options) => ({
     ]
   },
   plugins: [
+    new CleanWebpackPlugin(),
     new HtmlWebpackPlugin({ template: "src/Web/index.html", chunks: ["web"] }),
     new MiniCssExtractPlugin({ filename: "[name].[contenthash].css" }),
     new CopyPlugin([{ from: "public/", to: "../dist" }])

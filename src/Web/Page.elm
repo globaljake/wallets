@@ -15,21 +15,19 @@ view : Page -> { title : String, content : Html msg } -> Document msg
 view page { title, content } =
     { title = title ++ " - Ship"
     , body =
-        [ viewHeader page
-        , viewContent content
-        , viewFooter
+        [ viewContent content
         ]
     }
 
 
 viewHeader : Page -> Html msg
 viewHeader page =
-    Html.nav [ Attributes.class "container h-10" ] []
+    Html.nav [ Attributes.class "container" ] []
 
 
 viewContent : Html msg -> Html msg
 viewContent content =
-    Html.main_ [ Attributes.class "container p-4" ]
+    Html.main_ [ Attributes.class "container h-full" ]
         [ content
         ]
 
