@@ -1,0 +1,11 @@
+@tailwind base;
+
+/* @import url("/fonts"); */
+
+body {
+  @apply h-screen bg-gray-100;
+}
+
+@tailwind components;
+
+@tailwind utilities;

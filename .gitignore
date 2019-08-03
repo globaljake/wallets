@@ -1,14 +1,5 @@
-/_build/
-/cover/
-/deps/
-/doc/
-/.fetch
-erl_crash.dump
-*.ez
-wallets-*.tar
 npm-debug.log
-/assets/node_modules/
-/assets/elm-stuff/
-/priv/static/
-/config/*.secret.exs
+/node_modules
+/elm-stuff
+/dist
 .DS_Store

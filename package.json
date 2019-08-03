@@ -1,0 +1,22 @@
+{
+  "private": true,
+  "scripts": {
+    "build": "webpack --mode production",
+    "start": "webpack --mode development --watch-stdin"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.4.5",
+    "@babel/preset-env": "^7.4.5",
+    "@fullhuman/postcss-purgecss": "^1.2.0",
+    "babel-loader": "^8.0.6",
+    "copy-webpack-plugin": "^5.0.3",
+    "css-loader": "^3.0.0",
+    "elm-webpack-loader": "^5.0.0",
+    "mini-css-extract-plugin": "^0.7.0",
+    "postcss-loader": "^3.0.0",
+    "postcss-preset-env": "^6.7.0",
+    "tailwindcss": "^1.0.4",
+    "webpack": "^4.35.2",
+    "webpack-cli": "^3.3.5"
+  }
+}
