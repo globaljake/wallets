@@ -20,7 +20,7 @@ type Msg
 
 
 type Ext
-    = RequestSubmit { id : String, amount : Float }
+    = RequestSubmit { id : String, amount : Int }
     | RequestDelete String
     | NoOp
 
@@ -73,6 +73,9 @@ update msg (Model model) =
             ( Model model
             , RequestSubmit
                 { id = Wallet.id model.wallet
-                , amount = String.toFloat model.amountField |> Maybe.withDefault 0
+                , amount =
+                    String.toFloat model.amountField
+                        |> Maybe.map (truncate << (*) 100)
+                        |> Maybe.withDefault 0
                 }
             )

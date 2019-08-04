@@ -21,7 +21,7 @@ type Msg
 
 
 type Ext
-    = RequestSubmit { emoji : String, title : String, budget : Float }
+    = RequestSubmit { emoji : String, title : String, budget : Int }
     | NoOp
 
 
@@ -91,6 +91,9 @@ update msg (Model model) =
             , RequestSubmit
                 { emoji = model.emojiField
                 , title = model.titleField
-                , budget = String.toFloat model.budgetField |> Maybe.withDefault 0
+                , budget =
+                    String.toFloat model.budgetField
+                        |> Maybe.map (truncate << (*) 100)
+                        |> Maybe.withDefault 0
                 }
             )

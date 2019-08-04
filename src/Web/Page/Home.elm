@@ -37,8 +37,6 @@ type Msg
     | CloseModal
     | ModalMsg ModalMsg
     | WalletIndexResponse (Result String (List Wallet))
-    | WalletCreate
-    | WalletDelete String
 
 
 type InitModal
@@ -94,16 +92,6 @@ update msg model =
         WalletIndexResponse (Err _) ->
             ( model
             , Cmd.none
-            )
-
-        WalletCreate ->
-            ( { model | modal = Nothing }
-            , Wallet.create { title = "Shopping", emoji = "🛍", budget = 100 }
-            )
-
-        WalletDelete id ->
-            ( { model | modal = Nothing }
-            , Wallet.delete id
             )
 
 
@@ -203,24 +191,59 @@ viewContent model =
 
 item : Wallet -> Html Msg
 item wallet =
+    let
+        formatToDollars : Int -> String
+        formatToDollars int =
+            let
+                sign =
+                    if int < 0 then
+                        "-$"
+
+                    else
+                        "$"
+            in
+            if int == 0 then
+                "$0"
+
+            else if abs int < 10 then
+                String.concat [ sign, ".0", String.fromInt (abs int) ]
+
+            else
+                String.concat
+                    [ sign
+                    , String.dropRight 2 (String.fromInt (abs int))
+
+                    -- , "."
+                    -- , String.right 2 (String.fromInt (abs int))
+                    , if String.right 2 (String.fromInt (abs int)) == "00" then
+                        ""
+
+                      else
+                        "." ++ String.right 2 (String.fromInt (abs int))
+                    ]
+    in
     Html.button
         [ Attributes.class "p-5 my-2 bg-white rounded-lg shadow"
         , Events.onClick <| SetModal (InitSpend wallet)
         ]
-        [ Html.div [ Attributes.class "flex flex-col pointer-events-none" ]
+        [ Html.div [ Attributes.class "flex flex-col pointer-events-none overflow-hidden" ]
             [ Html.div [ Attributes.class "flex justify-between" ]
                 [ Html.div [ Attributes.class "flex font-semibold text-xl items-center" ]
                     [ Html.span [ Attributes.class "pr-2" ] [ Html.text (Wallet.emoji wallet) ]
                     , Html.span [] [ Html.text (Wallet.title wallet) ]
                     ]
                 , Html.span [ Attributes.class "font-semibold text-xl" ]
-                    [ Html.text <| String.concat [ "$", String.fromFloat (Wallet.available wallet) ]
+                    [ Html.text <| formatToDollars (Wallet.available wallet)
                     ]
                 ]
             , Html.div [ Attributes.class "relative h-2 w-full mt-3 mb-2" ]
                 [ Html.div [ Attributes.class "relative h-full w-full bg-gray-300 rounded-full" ] []
                 , Html.div
-                    [ Attributes.class "absolute inset-0 h-full bg-green-400 rounded-full"
+                    [ Attributes.classList
+                        [ ( "absolute inset-0 h-full rounded-full", True )
+                        , ( "bg-green-400", Wallet.available wallet >= 0 )
+                        , ( "bg-red-600", Wallet.available wallet < 0 )
+                        ]
                     , Attributes.style "width"
                         (String.concat
                             [ String.fromFloat (Wallet.percentAvailable wallet)
@@ -231,33 +254,34 @@ item wallet =
                     []
                 ]
             , Html.div [ Attributes.class "text-left" ]
-                [ if Wallet.budget wallet == Wallet.available wallet then
-                    Html.span [ Attributes.class "text-sm font-semibold text-green-400" ]
-                        [ Html.text "Ready to Spend!"
-                        ]
-
-                  else if Wallet.available wallet == 0 then
-                    Html.span [ Attributes.class "text-sm font-semibold text-grey-600" ]
-                        [ Html.text "Way to stay on budget!"
+                [ if Wallet.available wallet == 0 then
+                    Html.span [ Attributes.class "text-sm font-semibold text-gray-600" ]
+                        [ Html.text "Awesome! You Stayed on Budget."
                         ]
                     --   else if Wallet.available wallet < 0 then
                     --     Html.span [ Attributes.class "text-sm font-semibold text-grey-600" ]
                     --         [ Html.text "Great job!"
                     --         ]
 
+                  else if Wallet.budget wallet == Wallet.available wallet then
+                    Html.span [ Attributes.class "text-sm font-semibold text-green-400" ]
+                        [ Html.text "Ready to Spend!"
+                        ]
+
                   else
-                    Html.span [ Attributes.class "text-sm text-gray-600" ]
+                    Html.span
+                        [ Attributes.classList
+                            [ ( "text-sm", True )
+                            , ( "text-gray-600", Wallet.available wallet > 0 )
+                            , ( "text-red-600", Wallet.available wallet < 0 )
+                            ]
+                        ]
                         [ Html.span [ Attributes.class "font-semibold" ]
-                            [ Html.text <|
-                                String.concat
-                                    [ "$"
-                                    , String.fromFloat (Wallet.spent wallet)
-                                    ]
+                            [ Html.text <| formatToDollars (Wallet.spent wallet)
                             ]
                         , Html.span [ Attributes.class "px-1" ] [ Html.text "of" ]
                         , Html.span [ Attributes.class "font-semibold pr-1" ]
-                            [ Html.text <|
-                                String.concat [ "$", String.fromFloat (Wallet.budget wallet) ]
+                            [ Html.text <| formatToDollars (Wallet.budget wallet)
                             ]
                         , Html.span [] [ Html.text "spent" ]
                         ]
