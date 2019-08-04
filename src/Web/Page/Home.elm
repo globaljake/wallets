@@ -37,6 +37,7 @@ type Msg
     | CloseModal
     | ModalMsg ModalMsg
     | WalletIndexResponse (Result String (List Wallet))
+    | ReloadTest
 
 
 type InitModal
@@ -93,6 +94,9 @@ update msg model =
             ( model
             , Cmd.none
             )
+
+        ReloadTest ->
+            ( model, Wallet.show "" )
 
 
 modalInit : InitModal -> Modal
@@ -170,7 +174,11 @@ viewContent model =
                 [ Html.span [ Attributes.class "text-4xl font-semibold leading-none" ]
                     [ Html.text "Wallets"
                     ]
-                , Html.div [ Attributes.class "rounded-full h-10 w-10 bg-red-300" ] []
+                , Html.button
+                    [ Attributes.class "rounded-full h-10 w-10 bg-red-300"
+                    , Events.onClick ReloadTest
+                    ]
+                    []
                 ]
             , Html.div [ Attributes.class "my-4 leading-none text-gray-500" ]
                 [ Html.span [] [ Html.text "AUGUST 2019" ]

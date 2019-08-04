@@ -1,32 +1,18 @@
-const generateUUID = () => {
-  // Public Domain/MIT
-  var d = new Date().getTime();
-  if (
-    typeof performance !== "undefined" &&
-    typeof performance.now === "function"
-  ) {
-    d += performance.now(); //use high-precision timer if available
-  }
-  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, function(c) {
-    var r = (d + Math.random() * 16) % 16 | 0;
-    d = Math.floor(d / 16);
-    return (c === "x" ? r : (r & 0x3) | 0x8).toString(16);
-  });
-};
-
 const init = app => {
   const saveAndSendAll = wallets => {
     localStorage.setItem("wallets", JSON.stringify(wallets));
     app.ports.walletInbound.send({
       tag: "IndexResponse",
-      wallets: Object.keys(wallets).map(key => wallets[key])
+      wallets: Object.keys(wallets)
+        .sort()
+        .map(key => wallets[key])
     });
   };
   app.ports.walletOutbound.subscribe(({ tag, ...payload }) => {
     const wallets = JSON.parse(localStorage.getItem("wallets")) || {};
     switch (tag) {
       case "Create":
-        const id = generateUUID();
+        const id = Date.now() + "";
         const { title, emoji, budget, available } = payload;
         const newWallet = { id, title, emoji, budget, available };
 
@@ -34,7 +20,9 @@ const init = app => {
         return;
 
       case "Index":
-        const walletsList = Object.keys(wallets).map(key => wallets[key]);
+        const walletsList = Object.keys(wallets)
+          .sort()
+          .map(key => wallets[key]);
 
         app.ports.walletInbound.send({
           tag: "IndexResponse",
@@ -46,6 +34,7 @@ const init = app => {
         // const walletsList = Object.keys(wallets).map(key => wallets[key]);
 
         // app.ports.walletInbound.send({ tag, wallet: wallets[payload.id] });
+        location.reload(true);
         return;
 
       case "Update":

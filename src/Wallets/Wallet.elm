@@ -10,6 +10,7 @@ port module Wallets.Wallet exposing
     , indexResponse
     , mockList
     , percentAvailable
+    , show
     , spent
     , title
     , update
