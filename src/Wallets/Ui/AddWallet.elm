@@ -40,35 +40,38 @@ init =
 
 view : Model -> Html Msg
 view (Model model) =
-    Html.div []
-        [ Html.div [ Attributes.class "my-2 w-full" ]
+    Html.div [ Attributes.class "flex flex-col" ]
+        [ Html.div [ Attributes.class "mb-4 w-full" ]
             [ Html.input
-                [ Attributes.class "w-full p-1"
+                [ Attributes.class "w-full p-2 border rounded"
                 , Attributes.value model.emojiField
                 , Attributes.placeholder "Emoji"
                 , Events.onInput EmojiFieldEntered
                 ]
                 []
             ]
-        , Html.div [ Attributes.class "my-2 w-full" ]
+        , Html.div [ Attributes.class "mb-4 w-full" ]
             [ Html.input
-                [ Attributes.class "w-full p-1"
+                [ Attributes.class "w-full p-2 border rounded"
                 , Attributes.value model.titleField
                 , Attributes.placeholder "Title"
                 , Events.onInput TitleFieldEntered
                 ]
                 []
             ]
-        , Html.div [ Attributes.class "my-2 w-full" ]
+        , Html.div [ Attributes.class "mb-4 w-full" ]
             [ Html.input
-                [ Attributes.class "w-full p-1"
+                [ Attributes.class "w-full p-2 border rounded"
                 , Attributes.value model.budgetField
                 , Attributes.placeholder "Budget"
                 , Events.onInput BudgetFieldEntered
                 ]
                 []
             ]
-        , Html.button [ Events.onClick Submit ]
+        , Html.button
+            [ Attributes.class "p-4 bg-green-400 rounded font-semibold text-white"
+            , Events.onClick Submit
+            ]
             [ Html.text "Create Wallet"
             ]
         ]

@@ -38,21 +38,24 @@ view (Model model) =
     Html.div [ Attributes.class "flex flex-col h-full justify-between" ]
         [ Html.div [ Attributes.class "flex flex-col" ]
             [ Html.div
-                [ Attributes.class "my-2 w-full" ]
+                [ Attributes.class "mb-4 w-full" ]
                 [ Html.input
-                    [ Attributes.class "w-full p-1"
+                    [ Attributes.class "w-full p-2 border rounded"
                     , Attributes.value model.amountField
                     , Attributes.placeholder "Amount"
                     , Events.onInput AmountFieldEntered
                     ]
                     []
                 ]
-            , Html.button [ Attributes.class "p-4 bg-green-400", Events.onClick Submit ]
+            , Html.button
+                [ Attributes.class "p-4 bg-green-400 rounded font-semibold text-white"
+                , Events.onClick Submit
+                ]
                 [ Html.text "Spend"
                 ]
             ]
         , Html.button
-            [ Attributes.class "mt-6 p-4 text-red-400"
+            [ Attributes.class "mt-6 p-4 font-semibold text-red-600"
             , Events.onClick <| DeleteWallet
             ]
             [ Html.text "Delete"
