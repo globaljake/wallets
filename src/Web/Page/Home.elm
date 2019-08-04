@@ -4,6 +4,7 @@ import Html exposing (Html)
 import Html.Attributes as Attributes
 import Html.Events as Events
 import Wallets.Session as Session exposing (Session)
+import Wallets.Ui.AddWallet as AddWallet
 import Wallets.Ui.Button as Button
 import Wallets.Wallet as Wallet exposing (Wallet)
 
@@ -24,18 +25,32 @@ toSession model =
     model.session
 
 
+type ModalMsg
+    = AddWalletMsg AddWallet.Msg
+
+
 type Msg
     = NoOp
-    | SetModal Modal
+    | SetModal InitModal
     | CloseModal
+    | ModalMsg ModalMsg
     | WalletIndexResponse (Result String (List Wallet))
     | WalletCreate
     | WalletDelete String
 
 
+type InitModal
+    = InitAddWallet
+    | InitSpend Wallet
+
+
+type alias SpendModel =
+    { wallet : Wallet }
+
+
 type Modal
-    = AddWallet
-    | Spend Wallet
+    = AddWallet AddWallet.Model
+    | Spend SpendModel
 
 
 
@@ -60,8 +75,8 @@ update msg model =
         NoOp ->
             ( model, Cmd.none )
 
-        SetModal modal ->
-            ( { model | modal = Just modal }
+        SetModal init_ ->
+            ( { model | modal = Just (modalInit init_) }
             , Cmd.none
             )
 
@@ -69,6 +84,9 @@ update msg model =
             ( { model | modal = Nothing }
             , Cmd.none
             )
+
+        ModalMsg subMsg ->
+            modalUpdate subMsg model
 
         WalletIndexResponse (Ok wallets) ->
             ( { model | wallets = wallets }
@@ -82,13 +100,42 @@ update msg model =
 
         WalletCreate ->
             ( { model | modal = Nothing }
-            , Wallet.create { title = "Shopping", emoji = "🛍", budget = 100, available = 50 }
+            , Wallet.create { title = "Shopping", emoji = "🛍", budget = 100 }
             )
 
         WalletDelete id ->
             ( { model | modal = Nothing }
             , Wallet.delete id
             )
+
+
+modalInit : InitModal -> Modal
+modalInit init_ =
+    case init_ of
+        InitAddWallet ->
+            AddWallet AddWallet.init
+
+        InitSpend wallet ->
+            Spend { wallet = wallet }
+
+
+modalUpdate : ModalMsg -> Model -> ( Model, Cmd Msg )
+modalUpdate msg model =
+    case ( msg, model.modal ) of
+        ( AddWalletMsg subMsg, Just (AddWallet subModel) ) ->
+            case AddWallet.update subMsg subModel of
+                ( newSubModel, AddWallet.NoOp ) ->
+                    ( { model | modal = Just (AddWallet newSubModel) }
+                    , Cmd.none
+                    )
+
+                ( _, AddWallet.RequestSubmit createPayload ) ->
+                    ( { model | modal = Nothing }
+                    , Wallet.create createPayload
+                    )
+
+        _ ->
+            ( model, Cmd.none )
 
 
 
@@ -102,11 +149,11 @@ view model =
         Html.div [ Attributes.class "relative h-full" ]
             [ viewContent model
             , case model.modal of
-                Nothing ->
-                    Html.text ""
-
                 Just modal ->
                     viewModal modal
+
+                Nothing ->
+                    Html.text ""
             ]
     }
 
@@ -131,7 +178,7 @@ viewContent model =
                 (List.map item model.wallets)
             , Html.button
                 [ Attributes.class "text-xl font-semibold text-gray-500 text-center my-6"
-                , Events.onClick (SetModal AddWallet)
+                , Events.onClick (SetModal InitAddWallet)
                 ]
                 [ Html.text "+ New Wallet"
                 ]
@@ -143,7 +190,7 @@ item : Wallet -> Html Msg
 item wallet =
     Html.button
         [ Attributes.class "p-5 my-2 bg-white rounded-lg shadow"
-        , Events.onClick <| SetModal (Spend wallet)
+        , Events.onClick <| SetModal (InitSpend wallet)
         ]
         [ Html.div [ Attributes.class "flex flex-col pointer-events-none" ]
             [ Html.div [ Attributes.class "flex justify-between" ]
@@ -221,29 +268,21 @@ viewModal modal =
     in
     Html.div [ Attributes.class "absolute inset-0 bg-white h-screen" ]
         [ case modal of
-            AddWallet ->
-                mHelp "Add Wallet" viewAddWallet
+            AddWallet subModel ->
+                AddWallet.view subModel
+                    |> Html.map (ModalMsg << AddWalletMsg)
+                    |> mHelp "Add Wallet"
 
-            Spend wallet ->
-                mHelp "Spend" (viewSpend wallet)
+            Spend subModel ->
+                mHelp "Spend" (viewSpend subModel)
         ]
 
 
-viewAddWallet : Html Msg
-viewAddWallet =
+viewSpend : SpendModel -> Html Msg
+viewSpend subModel =
     Html.div []
-        [ Html.text "add wallet!!!!!!!!"
-        , Html.button [ Events.onClick WalletCreate ]
-            [ Html.text "Create Shopping"
-            ]
-        ]
-
-
-viewSpend : Wallet -> Html Msg
-viewSpend wallet =
-    Html.div []
-        [ Html.text (Wallet.title wallet)
-        , Html.button [ Events.onClick (WalletDelete (Wallet.id wallet)) ]
+        [ Html.text (Wallet.title subModel.wallet)
+        , Html.button [ Events.onClick (WalletDelete (Wallet.id subModel.wallet)) ]
             [ Html.text "Delete"
             ]
         ]

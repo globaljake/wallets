@@ -134,7 +134,6 @@ create :
     { title : String
     , emoji : String
     , budget : Float
-    , available : Float
     }
     -> Cmd msg
 create config =
@@ -144,7 +143,7 @@ create config =
             , ( "title", Encode.string config.title )
             , ( "emoji", Encode.string config.emoji )
             , ( "budget", Encode.float config.budget )
-            , ( "available", Encode.float config.available )
+            , ( "available", Encode.float config.budget )
             ]
 
 
