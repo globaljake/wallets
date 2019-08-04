@@ -220,9 +220,6 @@ item wallet =
                 String.concat
                     [ sign
                     , String.dropRight 2 (String.fromInt (abs int))
-
-                    -- , "."
-                    -- , String.right 2 (String.fromInt (abs int))
                     , if String.right 2 (String.fromInt (abs int)) == "00" then
                         ""
 
