@@ -12,6 +12,7 @@ port module Wallets.Wallet exposing
     , percentAvailable
     , spent
     , title
+    , update
     )
 
 import Json.Decode as Decode
@@ -158,6 +159,16 @@ show id_ =
         Encode.object
             [ ( "tag", Encode.string "Show" )
             , ( "id", Encode.string id_ )
+            ]
+
+
+update : { id : String, amount : Float } -> Cmd msg
+update config =
+    walletOutbound <|
+        Encode.object
+            [ ( "tag", Encode.string "Update" )
+            , ( "id", Encode.string config.id )
+            , ( "amount", Encode.float config.amount )
             ]
 
 

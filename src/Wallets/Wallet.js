@@ -48,9 +48,17 @@ const init = app => {
         // app.ports.walletInbound.send({ tag, wallet: wallets[payload.id] });
         return;
 
+      case "Update":
+        if (payload.amount && wallets[payload.id]) {
+          wallets[payload.id].available =
+            wallets[payload.id].available - payload.amount;
+          saveAndSendAll(wallets);
+        }
+
+        return;
       case "Delete":
-        const walletsListDelete = Object.keys(wallets).map(key => wallets[key]);
-        saveAndSendAll(walletsListDelete.filter(({ id }) => id !== payload.id));
+        delete wallets[payload.id];
+        saveAndSendAll(wallets);
 
         return;
 

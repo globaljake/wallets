@@ -6,6 +6,7 @@ import Html.Events as Events
 import Wallets.Session as Session exposing (Session)
 import Wallets.Ui.AddWallet as AddWallet
 import Wallets.Ui.Button as Button
+import Wallets.Ui.Spend as Spend
 import Wallets.Wallet as Wallet exposing (Wallet)
 
 
@@ -27,6 +28,7 @@ toSession model =
 
 type ModalMsg
     = AddWalletMsg AddWallet.Msg
+    | SpendMsg Spend.Msg
 
 
 type Msg
@@ -44,13 +46,9 @@ type InitModal
     | InitSpend Wallet
 
 
-type alias SpendModel =
-    { wallet : Wallet }
-
-
 type Modal
     = AddWallet AddWallet.Model
-    | Spend SpendModel
+    | Spend Spend.Model
 
 
 
@@ -116,7 +114,7 @@ modalInit init_ =
             AddWallet AddWallet.init
 
         InitSpend wallet ->
-            Spend { wallet = wallet }
+            Spend (Spend.init wallet)
 
 
 modalUpdate : ModalMsg -> Model -> ( Model, Cmd Msg )
@@ -132,6 +130,23 @@ modalUpdate msg model =
                 ( _, AddWallet.RequestSubmit createPayload ) ->
                     ( { model | modal = Nothing }
                     , Wallet.create createPayload
+                    )
+
+        ( SpendMsg subMsg, Just (Spend subModel) ) ->
+            case Spend.update subMsg subModel of
+                ( newSubModel, Spend.NoOp ) ->
+                    ( { model | modal = Just (Spend newSubModel) }
+                    , Cmd.none
+                    )
+
+                ( _, Spend.RequestSubmit updatePayload ) ->
+                    ( { model | modal = Nothing }
+                    , Wallet.update updatePayload
+                    )
+
+                ( _, Spend.RequestDelete id ) ->
+                    ( { model | modal = Nothing }
+                    , Wallet.delete id
                     )
 
         _ ->
@@ -220,8 +235,13 @@ item wallet =
                     Html.span [ Attributes.class "text-sm font-semibold text-green-400" ]
                         [ Html.text "Ready to Spend!"
                         ]
-                    --   else if wallet.available <= 0 then
-                    --     Html.span [ Attributes.class "text-sm font-semibold text-green-400" ]
+
+                  else if Wallet.available wallet == 0 then
+                    Html.span [ Attributes.class "text-sm font-semibold text-grey-600" ]
+                        [ Html.text "Way to stay on budget!"
+                        ]
+                    --   else if Wallet.available wallet < 0 then
+                    --     Html.span [ Attributes.class "text-sm font-semibold text-grey-600" ]
                     --         [ Html.text "Great job!"
                     --         ]
 
@@ -250,7 +270,7 @@ viewModal : Modal -> Html Msg
 viewModal modal =
     let
         mHelp text content =
-            Html.div []
+            Html.div [ Attributes.class "h-full flex flex-col" ]
                 [ Html.div [ Attributes.class "flex pt-4 pb-6 border-b items-center" ]
                     [ Html.button [ Events.onClick CloseModal ]
                         [ Html.span
@@ -263,7 +283,7 @@ viewModal modal =
                         ]
                     , Html.div [ Attributes.class "p-2 w-8 h-8" ] []
                     ]
-                , Html.div [ Attributes.class "p-4" ] [ content ]
+                , Html.div [ Attributes.class "flex flex-1 flex-col p-4" ] [ content ]
                 ]
     in
     Html.div [ Attributes.class "absolute inset-0 bg-white h-screen" ]
@@ -274,17 +294,9 @@ viewModal modal =
                     |> mHelp "Add Wallet"
 
             Spend subModel ->
-                mHelp "Spend" (viewSpend subModel)
-        ]
-
-
-viewSpend : SpendModel -> Html Msg
-viewSpend subModel =
-    Html.div []
-        [ Html.text (Wallet.title subModel.wallet)
-        , Html.button [ Events.onClick (WalletDelete (Wallet.id subModel.wallet)) ]
-            [ Html.text "Delete"
-            ]
+                Spend.view subModel
+                    |> Html.map (ModalMsg << SpendMsg)
+                    |> mHelp "Spend"
         ]
 
 

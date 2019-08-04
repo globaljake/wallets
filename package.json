@@ -4,7 +4,7 @@
     "prebuild": "rimraf dist",
     "build": "webpack --mode production",
     "start": "webpack --mode development --watch-stdin",
-    "deploy": "aws s3 sync ./dist s3://wallets.app --acl public-read"
+    "deploy": "aws s3 sync ./dist s3://wallets.globaljake.com --acl public-read"
   },
   "devDependencies": {
     "@babel/core": "^7.4.5",
