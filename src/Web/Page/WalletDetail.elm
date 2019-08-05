@@ -73,7 +73,7 @@ init session id =
       , transactions = Dict.empty
       , modal = Nothing
       }
-    , Cmd.batch [ Transaction.index, Wallet.show id ]
+    , Cmd.batch [ Transaction.indexByWalletId id, Wallet.show id ]
     )
 
 
@@ -127,7 +127,7 @@ update msg model =
                     Dict.insert (Transaction.id transaction) transaction model.transactions
               }
             , Cmd.batch
-                [ Transaction.index
+                [ Transaction.indexByWalletId (Transaction.walletId transaction)
                 , Wallet.show (Transaction.walletId transaction)
                 ]
             )

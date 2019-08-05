@@ -13,6 +13,23 @@ const init = app => {
         });
         return;
 
+      case "IndexByWalletId":
+        if (!payload.walletId) return;
+        const transByWalletId = Object.keys(transactions).reduce((acc, key) => {
+          const current = transactions[key];
+          if (current.walletId === payload.walletId) {
+            acc[current.id] = { ...current };
+          }
+          return acc;
+        }, {});
+
+        app.ports.transactionInbound.send({
+          tag: "IndexResponse",
+          idList: Object.keys(transByWalletId).sort(),
+          transactions: transByWalletId
+        });
+        return;
+
       case "Create":
         const { walletId, description, amount } = payload;
         const wallets = JSON.parse(localStorage.getItem("wallets")) || {};

@@ -6,6 +6,7 @@ port module Wallets.Transaction exposing
     , id
     , inbound
     , index
+    , indexByWalletId
     , walletId
     )
 
@@ -153,3 +154,12 @@ create config =
 index : Cmd msg
 index =
     transactionOutbound <| Encode.object [ ( "tag", Encode.string "Index" ) ]
+
+
+indexByWalletId : String -> Cmd msg
+indexByWalletId id_ =
+    transactionOutbound <|
+        Encode.object
+            [ ( "tag", Encode.string "IndexByWalletId" )
+            , ( "walletId", Encode.string id_ )
+            ]
