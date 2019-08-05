@@ -6,6 +6,7 @@ body {
   @apply h-screen bg-gray-100;
 }
 
+a,
 button,
 input {
   -webkit-tap-highlight-color: rgba(0, 0, 0, 0);

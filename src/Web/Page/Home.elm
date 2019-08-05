@@ -164,11 +164,6 @@ modalUpdate msg model =
                     , Wallet.update updatePayload
                     )
 
-                ( _, Spend.RequestDelete id ) ->
-                    ( { model | modal = Nothing }
-                    , Wallet.delete id
-                    )
-
         _ ->
             ( model, Cmd.none )
 

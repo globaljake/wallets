@@ -26,7 +26,7 @@ const init = app => {
         const { title, emoji, budget, available } = payload;
         if (!title || !emoji || !budget || !available) return;
 
-        const id = Date.now() + "";
+        const id = Date.now() + "_wallet";
         const newWallet = { id, title, emoji, budget, available };
 
         save({ [id]: newWallet, ...wallets });

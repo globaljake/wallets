@@ -5,6 +5,7 @@ import Html exposing (Html)
 import Html.Attributes as Attributes
 import Html.Events as Events
 import Wallets.Session as Session exposing (Session)
+import Wallets.Transaction as Transaction exposing (Transaction)
 import Wallets.Ui.AddWallet as AddWallet
 import Wallets.Ui.Button as Button
 import Wallets.Ui.Spend as Spend
@@ -19,7 +20,9 @@ import Web.Route as Route
 type alias Model =
     { session : Session
     , id : String
+    , transactionIdList : List String
     , wallets : Dict String Wallet
+    , transactions : Dict String Transaction
     , modal : Maybe Modal
     }
 
@@ -40,6 +43,7 @@ type Msg
     | CloseModal
     | ModalMsg ModalMsg
     | WalletShowResponse (Result String Wallet)
+    | WalletDelete String
     | WalletDeleteResponse (Result String String)
     | WalletError String
 
@@ -62,7 +66,9 @@ init : Session -> String -> ( Model, Cmd Msg )
 init session id =
     ( { session = session
       , id = id
+      , transactionIdList = []
       , wallets = Dict.empty
+      , transactions = Dict.empty
       , modal = Nothing
       }
     , Wallet.show id
@@ -96,6 +102,11 @@ update msg model =
         WalletShowResponse (Err _) ->
             ( model
             , Cmd.none
+            )
+
+        WalletDelete id ->
+            ( model
+            , Wallet.delete id
             )
 
         WalletDeleteResponse (Ok id) ->
@@ -149,11 +160,6 @@ modalUpdate msg model =
                     , Wallet.update updatePayload
                     )
 
-                ( _, Spend.RequestDelete id ) ->
-                    ( { model | modal = Nothing }
-                    , Wallet.delete id
-                    )
-
         _ ->
             ( model, Cmd.none )
 
@@ -181,8 +187,8 @@ view model =
 viewContent : Model -> Html Msg
 viewContent model =
     Html.div [ Attributes.class "h-full overflow-auto" ]
-        [ Html.div [ Attributes.class "flex flex-col" ]
-            [ Html.div [ Attributes.class "flex p-4 border-b items-center bg-white" ]
+        [ Html.div [ Attributes.class "flex flex-col border-b  bg-white" ]
+            [ Html.div [ Attributes.class "flex p-4 items-center" ]
                 [ Html.a [ Route.href Route.Home ]
                     [ Html.span
                         [ Attributes.class "p-2 w-8 h-8 flex justify-center items-center font-semibold"
@@ -213,11 +219,6 @@ viewContent model =
                     ]
                 , Html.div [ Attributes.class "p-2 w-8 h-8" ] []
                 ]
-            ]
-        , Html.div [ Attributes.class "flex flex-col p-4" ]
-            [ Html.div [ Attributes.class "flex flex-col" ] []
-
-            -- (List.map item model.wallets)
             , case Dict.get model.id model.wallets of
                 Nothing ->
                     Html.span [ Attributes.class "text-xl font-semibold" ]
@@ -225,12 +226,24 @@ viewContent model =
                         ]
 
                 Just wallet ->
-                    Html.button
-                        [ Attributes.class "text-xl font-semibold text-gray-500 text-center my-6"
-                        , Events.onClick <| SetModal (InitSpend wallet)
+                    Html.div [ Attributes.class "flex justify-between" ]
+                        [ Html.button
+                            [ Attributes.class "text-lg p-4 font-semibold text-red-500 text-center my-6"
+                            , Events.onClick <| WalletDelete (Wallet.id wallet)
+                            ]
+                            [ Html.text "Delete"
+                            ]
+                        , Html.button
+                            [ Attributes.class "text-lg p-4 font-semibold text-green-500 text-center my-6"
+                            , Events.onClick <| SetModal (InitSpend wallet)
+                            ]
+                            [ Html.text "Spend"
+                            ]
                         ]
-                        [ Html.text "Spend"
-                        ]
+            ]
+        , Html.div [ Attributes.class "flex flex-col p-4" ]
+            [ Html.div [ Attributes.class "flex flex-col" ]
+                (List.map item (model.transactionIdList |> List.filterMap (\x -> Dict.get x model.transactions)))
             ]
         ]
 
@@ -263,89 +276,12 @@ formatToDollars int =
             ]
 
 
-item : Wallet -> Html Msg
-item wallet =
+item : Transaction -> Html Msg
+item transaction =
     Html.div
-        [ Attributes.class "p-5 my-2 bg-white rounded-lg shadow"
+        [ Attributes.class "p-5 my-2 border-b"
         ]
-        [ Html.div [ Attributes.class "flex flex-col overflow-hidden" ]
-            [ Html.a [ Route.href (Route.WalletDetail (Wallet.id wallet)) ]
-                [ Html.div [ Attributes.class "flex justify-between" ]
-                    [ Html.div [ Attributes.class "flex font-semibold text-xl items-center" ]
-                        [ Html.span [ Attributes.class "pr-2" ] [ Html.text (Wallet.emoji wallet) ]
-                        , Html.span [] [ Html.text (Wallet.title wallet) ]
-                        ]
-                    , Html.span [ Attributes.class "font-semibold text-xl" ]
-                        [ Html.text <| formatToDollars (Wallet.available wallet)
-                        ]
-                    ]
-                ]
-            , Html.div [ Attributes.class "relative h-2 w-full mt-3 mb-2" ]
-                [ Html.div [ Attributes.class "relative h-full w-full bg-gray-300 rounded-full" ] []
-                , Html.div
-                    [ Attributes.classList
-                        [ ( "absolute inset-0 h-full rounded-full", True )
-                        , ( "bg-green-400", Wallet.available wallet >= 0 )
-                        , ( "bg-red-600", Wallet.available wallet < 0 )
-                        ]
-                    , Attributes.style "width"
-                        (String.concat
-                            [ String.fromFloat (Wallet.percentAvailable wallet)
-                            , "%"
-                            ]
-                        )
-                    ]
-                    []
-                ]
-            , Html.div [ Attributes.class "flex justify-between items center" ]
-                [ Html.div [ Attributes.class "text-left" ]
-                    [ if Wallet.available wallet == 0 then
-                        Html.span [ Attributes.class "text-sm font-semibold text-gray-600" ]
-                            [ Html.text "Awesome! You Stayed on Budget."
-                            ]
-                        --   else if Wallet.available wallet < 0 then
-                        --     Html.span [ Attributes.class "text-sm font-semibold text-grey-600" ]
-                        --         [ Html.text "Great job!"
-                        --         ]
-
-                      else if Wallet.budget wallet == Wallet.available wallet then
-                        Html.span [ Attributes.class "text-sm font-semibold text-green-400" ]
-                            [ Html.text "Ready to Spend!"
-                            ]
-
-                      else
-                        Html.span
-                            [ Attributes.classList
-                                [ ( "text-sm", True )
-                                , ( "text-gray-600", Wallet.available wallet > 0 )
-                                , ( "text-red-600", Wallet.available wallet < 0 )
-                                ]
-                            ]
-                            [ Html.span [ Attributes.class "font-semibold" ]
-                                [ Html.text <| formatToDollars (Wallet.spent wallet)
-                                ]
-                            , Html.span [ Attributes.class "px-1" ] [ Html.text "of" ]
-                            , Html.span [ Attributes.class "font-semibold pr-1" ]
-                                [ Html.text <| formatToDollars (Wallet.budget wallet)
-                                ]
-                            , Html.span [] [ Html.text "spent" ]
-                            ]
-                    ]
-                , Html.div [ Attributes.class "" ]
-                    [ Html.button
-                        [ Events.onClick <| SetModal (InitSpend wallet)
-                        , Attributes.classList
-                            [ ( "font-semibold text-sm", True )
-                            , ( "text-gray-600", Wallet.available wallet == 0 )
-                            , ( "text-green-400", Wallet.available wallet > 0 )
-                            , ( "text-red-600", Wallet.available wallet < 0 )
-                            ]
-                        ]
-                        [ Html.text "SPEND"
-                        ]
-                    ]
-                ]
-            ]
+        [ Html.text <| formatToDollars (Transaction.amount transaction)
         ]
 
 
