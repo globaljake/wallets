@@ -6,13 +6,12 @@ port module Wallets.Wallet exposing
     , delete
     , emoji
     , id
+    , inbound
     , index
-    , indexResponse
     , mockList
     , percentAvailable
     , reloadTest
     , show
-    , showResponse
     , spent
     , title
     , update
@@ -110,52 +109,69 @@ decoder =
 port walletInbound : (Encode.Value -> msg) -> Sub msg
 
 
-inboundHelp : (Result String a -> msg) -> Decode.Decoder a -> Sub msg
-inboundHelp tagger decoderA =
+inbound :
+    { onIndex : Maybe (Result String { idList : List String, wallets : Dict String Wallet } -> msg)
+    , onShow : Maybe (Result String Wallet -> msg)
+    , onDelete : Maybe (Result String String -> msg)
+    , onError : String -> msg
+    }
+    -> Sub msg
+inbound config =
+    let
+        decoder_ =
+            Decode.field "tag" Decode.string
+                |> Decode.andThen
+                    (\tag ->
+                        case tag of
+                            "IndexResponse" ->
+                                Decode.succeed
+                                    (\idList wallets ->
+                                        case config.onIndex of
+                                            Just tagger ->
+                                                tagger (Ok { idList = idList, wallets = wallets })
+
+                                            Nothing ->
+                                                config.onError "No msg given for IndexResponse"
+                                    )
+                                    |> Decode.required "idList" (Decode.list Decode.string)
+                                    |> Decode.required "wallets" (Decode.dict decoder)
+
+                            "ShowResponse" ->
+                                Decode.succeed
+                                    (\wallet ->
+                                        case config.onShow of
+                                            Just tagger ->
+                                                tagger (Ok wallet)
+
+                                            Nothing ->
+                                                config.onError "No msg given for ShowResponse"
+                                    )
+                                    |> Decode.required "wallet" decoder
+
+                            "DeleteResponse" ->
+                                Decode.succeed
+                                    (\id_ ->
+                                        case config.onDelete of
+                                            Just tagger ->
+                                                tagger (Ok id_)
+
+                                            Nothing ->
+                                                config.onError "No msg given for DeleteResponse"
+                                    )
+                                    |> Decode.required "id" Decode.string
+
+                            e ->
+                                Decode.fail ("Cannot decode tag of " ++ e)
+                    )
+    in
     walletInbound <|
         \value ->
-            Decode.decodeValue decoderA value
-                |> Result.mapError Decode.errorToString
-                |> tagger
+            case Decode.decodeValue decoder_ value of
+                Ok msg ->
+                    msg
 
-
-indexResponse :
-    (Result String { idList : List String, wallets : Dict String Wallet } -> msg)
-    -> Sub msg
-indexResponse tagger =
-    inboundHelp tagger
-        (Decode.field "tag" Decode.string
-            |> Decode.andThen
-                (\tag ->
-                    case tag of
-                        "IndexResponse" ->
-                            Decode.succeed
-                                (\idList wallets ->
-                                    { idList = idList, wallets = wallets }
-                                )
-                                |> Decode.required "idList" (Decode.list Decode.string)
-                                |> Decode.required "wallets" (Decode.dict decoder)
-
-                        _ ->
-                            Decode.fail "not right tag"
-                )
-        )
-
-
-showResponse : (Result String Wallet -> msg) -> Sub msg
-showResponse tagger =
-    inboundHelp tagger
-        (Decode.field "tag" Decode.string
-            |> Decode.andThen
-                (\tag ->
-                    case tag of
-                        "ShowResponse" ->
-                            Decode.field "wallet" decoder
-
-                        _ ->
-                            Decode.fail "not right tag"
-                )
-        )
+                Err e ->
+                    config.onError (Decode.errorToString e)
 
 
 port walletOutbound : Encode.Value -> Cmd msg

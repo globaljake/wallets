@@ -39,8 +39,10 @@ type Msg
     | SetModal InitModal
     | CloseModal
     | ModalMsg ModalMsg
-    | WalletIndexResponse (Result String { idList : List String, wallets : Dict String Wallet })
     | WalletShowResponse (Result String Wallet)
+    | WalletIndexResponse (Result String { idList : List String, wallets : Dict String Wallet })
+    | WalletDeleteResponse (Result String String)
+    | WalletError String
     | ReloadTest
 
 
@@ -88,6 +90,16 @@ update msg model =
         ModalMsg subMsg ->
             modalUpdate subMsg model
 
+        WalletShowResponse (Ok wallet) ->
+            ( { model | wallets = Dict.insert (Wallet.id wallet) wallet model.wallets }
+            , Wallet.index
+            )
+
+        WalletShowResponse (Err _) ->
+            ( model
+            , Cmd.none
+            )
+
         WalletIndexResponse (Ok { idList, wallets }) ->
             ( { model | idList = idList, wallets = wallets }
             , Cmd.none
@@ -98,15 +110,18 @@ update msg model =
             , Cmd.none
             )
 
-        WalletShowResponse (Ok wallet) ->
-            ( { model | wallets = Dict.insert (Wallet.id wallet) wallet model.wallets }
+        WalletDeleteResponse (Ok id) ->
+            ( { model | wallets = Dict.remove id model.wallets }
             , Cmd.none
             )
 
-        WalletShowResponse (Err _) ->
+        WalletDeleteResponse (Err _) ->
             ( model
             , Cmd.none
             )
+
+        WalletError err ->
+            ( model, Cmd.none )
 
         ReloadTest ->
             ( model, Wallet.reloadTest )
@@ -364,7 +379,9 @@ viewModal modal =
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
-    Sub.batch
-        [ Wallet.indexResponse WalletIndexResponse
-        , Wallet.indexResponse WalletIndexResponse
-        ]
+    Wallet.inbound
+        { onIndex = Just WalletIndexResponse
+        , onShow = Just WalletShowResponse
+        , onDelete = Just WalletDeleteResponse
+        , onError = WalletError
+        }

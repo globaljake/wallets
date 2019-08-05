@@ -40,6 +40,8 @@ type Msg
     | CloseModal
     | ModalMsg ModalMsg
     | WalletShowResponse (Result String Wallet)
+    | WalletDeleteResponse (Result String String)
+    | WalletError String
 
 
 type InitModal
@@ -95,6 +97,19 @@ update msg model =
             ( model
             , Cmd.none
             )
+
+        WalletDeleteResponse (Ok id) ->
+            ( model
+            , Route.replaceUrl (Session.navKey model.session) Route.Home
+            )
+
+        WalletDeleteResponse (Err _) ->
+            ( model
+            , Cmd.none
+            )
+
+        WalletError err ->
+            ( model, Cmd.none )
 
 
 modalInit : InitModal -> Modal
@@ -374,4 +389,9 @@ viewModal modal =
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
-    Wallet.showResponse WalletShowResponse
+    Wallet.inbound
+        { onIndex = Nothing
+        , onShow = Just WalletShowResponse
+        , onDelete = Just WalletDeleteResponse
+        , onError = WalletError
+        }

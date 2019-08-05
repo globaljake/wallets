@@ -1,12 +1,6 @@
 const init = app => {
   const save = wallets => {
     localStorage.setItem("wallets", JSON.stringify(wallets));
-    app.ports.walletInbound.send({
-      tag: "IndexResponse",
-      wallets: Object.keys(wallets)
-        .sort()
-        .map(key => wallets[key])
-    });
   };
   app.ports.walletOutbound.subscribe(({ tag, ...payload }) => {
     const wallets = JSON.parse(localStorage.getItem("wallets")) || {};
@@ -31,7 +25,6 @@ const init = app => {
       case "Create":
         const { title, emoji, budget, available } = payload;
         if (!title || !emoji || !budget || !available) return;
-        if (!wallets[payload.id]) return;
 
         const id = Date.now() + "";
         const newWallet = { id, title, emoji, budget, available };
@@ -39,7 +32,7 @@ const init = app => {
         save({ [id]: newWallet, ...wallets });
         app.ports.walletInbound.send({
           tag: "ShowResponse",
-          wallet: wallets[payload.id]
+          wallet: newWallet
         });
         return;
 
@@ -63,6 +56,10 @@ const init = app => {
 
         delete wallets[payload.id];
         save(wallets);
+        app.ports.walletInbound.send({
+          tag: "DeleteResponse",
+          id: payload.id
+        });
         return;
 
       case "ReloadTest":
