@@ -10,16 +10,18 @@ type Model
     = Model
         { wallet : Wallet
         , amountField : String
+        , descriptionField : String
         }
 
 
 type Msg
     = AmountFieldEntered String
+    | DescriptionFieldEntered String
     | Submit
 
 
 type Ext
-    = RequestSubmit { id : String, amount : Int }
+    = RequestSubmit { walletId : String, description : String, amount : Int }
     | NoOp
 
 
@@ -28,6 +30,7 @@ init wallet =
     Model
         { wallet = wallet
         , amountField = ""
+        , descriptionField = ""
         }
 
 
@@ -41,6 +44,16 @@ view (Model model) =
                 , Attributes.value model.amountField
                 , Attributes.placeholder "Amount"
                 , Events.onInput AmountFieldEntered
+                ]
+                []
+            ]
+        , Html.div
+            [ Attributes.class "mb-4 w-full" ]
+            [ Html.input
+                [ Attributes.class "w-full p-2 border rounded"
+                , Attributes.value model.descriptionField
+                , Attributes.placeholder "Description"
+                , Events.onInput DescriptionFieldEntered
                 ]
                 []
             ]
@@ -59,10 +72,14 @@ update msg (Model model) =
         AmountFieldEntered text ->
             ( Model { model | amountField = text }, NoOp )
 
+        DescriptionFieldEntered text ->
+            ( Model { model | descriptionField = text }, NoOp )
+
         Submit ->
             ( Model model
             , RequestSubmit
-                { id = Wallet.id model.wallet
+                { walletId = Wallet.id model.wallet
+                , description = model.descriptionField
                 , amount =
                     String.toFloat model.amountField
                         |> Maybe.map (truncate << (*) 100)

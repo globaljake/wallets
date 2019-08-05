@@ -13,8 +13,9 @@ port module Wallets.Wallet exposing
     , reloadTest
     , show
     , spent
-    , title
-    , update
+    ,  title
+       -- , update
+
     )
 
 import Dict exposing (Dict)
@@ -213,14 +214,15 @@ reloadTest =
     walletOutbound <| Encode.object [ ( "tag", Encode.string "ReloadTest" ) ]
 
 
-update : { id : String, amount : Int } -> Cmd msg
-update config =
-    walletOutbound <|
-        Encode.object
-            [ ( "tag", Encode.string "Update" )
-            , ( "id", Encode.string config.id )
-            , ( "amount", Encode.int config.amount )
-            ]
+
+-- update : { id : String, amount : Int } -> Cmd msg
+-- update config =
+--     walletOutbound <|
+--         Encode.object
+--             [ ( "tag", Encode.string "Update" )
+--             , ( "id", Encode.string config.id )
+--             , ( "amount", Encode.int config.amount )
+--             ]
 
 
 delete : String -> Cmd msg

@@ -36,19 +36,19 @@ const init = app => {
         });
         return;
 
-      case "Update":
-        if (!payload.id || !payload.amount) return;
-        if (!wallets[payload.id]) return;
+      // case "Update":
+      //   if (!payload.id || !payload.amount) return;
+      //   if (!wallets[payload.id]) return;
 
-        wallets[payload.id].available =
-          wallets[payload.id].available - payload.amount;
+      //   wallets[payload.id].available =
+      //     wallets[payload.id].available - payload.amount;
 
-        save(wallets);
-        app.ports.walletInbound.send({
-          tag: "ShowResponse",
-          wallet: wallets[payload.id]
-        });
-        return;
+      //   save(wallets);
+      //   app.ports.walletInbound.send({
+      //     tag: "ShowResponse",
+      //     wallet: wallets[payload.id]
+      //   });
+      //   return;
 
       case "Delete":
         if (!payload.id) return;

@@ -15,12 +15,17 @@ const init = app => {
 
       case "Create":
         const { walletId, description, amount } = payload;
+        const wallets = JSON.parse(localStorage.getItem("wallets")) || {};
         if (!walletId || !description || !amount) return;
+        if (!wallets[walletId]) return;
 
         const id = Date.now() + "_transaction";
         const newTransaction = { id, walletId, description, amount };
-
         save({ [id]: newTransaction, ...transactions });
+
+        wallets[walletId].available = wallets[walletId].available - amount;
+        localStorage.setItem("wallets", JSON.stringify(wallets));
+
         app.ports.transactionInbound.send({
           tag: "ShowResponse",
           transaction: newTransaction

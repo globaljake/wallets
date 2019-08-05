@@ -45,7 +45,9 @@ type Msg
     | WalletShowResponse (Result String Wallet)
     | WalletDelete String
     | WalletDeleteResponse (Result String String)
-    | WalletError String
+    | ApiError String
+    | TransactionIndexResponse (Result String { idList : List String, transactions : Dict String Transaction })
+    | TransactionShowResponse (Result String Transaction)
 
 
 type InitModal
@@ -71,7 +73,7 @@ init session id =
       , transactions = Dict.empty
       , modal = Nothing
       }
-    , Wallet.show id
+    , Cmd.batch [ Transaction.index, Wallet.show id ]
     )
 
 
@@ -119,7 +121,33 @@ update msg model =
             , Cmd.none
             )
 
-        WalletError err ->
+        TransactionShowResponse (Ok transaction) ->
+            ( { model
+                | transactions =
+                    Dict.insert (Transaction.id transaction) transaction model.transactions
+              }
+            , Cmd.batch
+                [ Transaction.index
+                , Wallet.show (Transaction.walletId transaction)
+                ]
+            )
+
+        TransactionShowResponse (Err _) ->
+            ( model
+            , Cmd.none
+            )
+
+        TransactionIndexResponse (Ok { idList, transactions }) ->
+            ( { model | transactionIdList = idList, transactions = transactions }
+            , Cmd.none
+            )
+
+        TransactionIndexResponse (Err _) ->
+            ( model
+            , Cmd.none
+            )
+
+        ApiError err ->
             ( model, Cmd.none )
 
 
@@ -155,9 +183,9 @@ modalUpdate msg model =
                     , Cmd.none
                     )
 
-                ( _, Spend.RequestSubmit updatePayload ) ->
+                ( _, Spend.RequestSubmit transactionCreatePayload ) ->
                     ( { model | modal = Nothing }
-                    , Wallet.update updatePayload
+                    , Transaction.create transactionCreatePayload
                     )
 
         _ ->
@@ -186,7 +214,7 @@ view model =
 
 viewContent : Model -> Html Msg
 viewContent model =
-    Html.div [ Attributes.class "h-full overflow-auto" ]
+    Html.div [ Attributes.class "h-full overflow-auto bg-white jake-remove-bg-white" ]
         [ Html.div [ Attributes.class "flex flex-col border-b  bg-white" ]
             [ Html.div [ Attributes.class "flex p-4 items-center" ]
                 [ Html.a [ Route.href Route.Home ]
@@ -241,8 +269,11 @@ viewContent model =
                             ]
                         ]
             ]
-        , Html.div [ Attributes.class "flex flex-col p-4" ]
-            [ Html.div [ Attributes.class "flex flex-col" ]
+        , Html.div [ Attributes.class "flex flex-col bg-white" ]
+            [ Html.div [ Attributes.class "flex text-lg p-4 bg-gray-100 font-semibold" ]
+                [ Html.text "AUGUST"
+                ]
+            , Html.div [ Attributes.class "flex flex-col p-4" ]
                 (List.map item (model.transactionIdList |> List.filterMap (\x -> Dict.get x model.transactions)))
             ]
         ]
@@ -278,10 +309,35 @@ formatToDollars int =
 
 item : Transaction -> Html Msg
 item transaction =
+    let
+        amt =
+            Transaction.amount transaction * -1
+    in
     Html.div
-        [ Attributes.class "p-5 my-2 border-b"
+        [ Attributes.class "flex items-center p-5 my-2 border-b"
         ]
-        [ Html.text <| formatToDollars (Transaction.amount transaction)
+        [ Html.div [ Attributes.class "flex " ]
+            [ Html.span
+                [ Attributes.class "rounded-full h-8 w-8 bg-red-300"
+                ]
+                []
+            ]
+        , Html.div [ Attributes.class "flex flex-1" ]
+            [ Html.span [ Attributes.class "px-4 text-lg font-semibold" ]
+                [ Html.text (Transaction.description transaction)
+                ]
+            ]
+        , Html.div [ Attributes.class "flex" ]
+            [ Html.span
+                [ Attributes.classList
+                    [ ( "font-semibold text-lg", True )
+                    , ( "text-red-400", amt < 0 )
+                    , ( "text-green-400", amt > 0 )
+                    ]
+                ]
+                [ Html.text (formatToDollars amt)
+                ]
+            ]
         ]
 
 
@@ -325,9 +381,16 @@ viewModal modal =
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
-    Wallet.inbound
-        { onIndex = Nothing
-        , onShow = Just WalletShowResponse
-        , onDelete = Just WalletDeleteResponse
-        , onError = WalletError
-        }
+    Sub.batch
+        [ Wallet.inbound
+            { onIndex = Nothing
+            , onShow = Just WalletShowResponse
+            , onDelete = Just WalletDeleteResponse
+            , onError = ApiError
+            }
+        , Transaction.inbound
+            { onIndex = Just TransactionIndexResponse
+            , onShow = Just TransactionShowResponse
+            , onError = ApiError
+            }
+        ]

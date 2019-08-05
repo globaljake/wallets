@@ -5,6 +5,7 @@ import Html exposing (Html)
 import Html.Attributes as Attributes
 import Html.Events as Events
 import Wallets.Session as Session exposing (Session)
+import Wallets.Transaction as Transaction exposing (Transaction)
 import Wallets.Ui.AddWallet as AddWallet
 import Wallets.Ui.Button as Button
 import Wallets.Ui.Spend as Spend
@@ -42,7 +43,7 @@ type Msg
     | WalletShowResponse (Result String Wallet)
     | WalletIndexResponse (Result String { idList : List String, wallets : Dict String Wallet })
     | WalletDeleteResponse (Result String String)
-    | WalletError String
+    | ApiError String
     | ReloadTest
 
 
@@ -120,7 +121,7 @@ update msg model =
             , Cmd.none
             )
 
-        WalletError err ->
+        ApiError err ->
             ( model, Cmd.none )
 
         ReloadTest ->
@@ -159,9 +160,9 @@ modalUpdate msg model =
                     , Cmd.none
                     )
 
-                ( _, Spend.RequestSubmit updatePayload ) ->
+                ( _, Spend.RequestSubmit createTransactionPayload ) ->
                     ( { model | modal = Nothing }
-                    , Wallet.update updatePayload
+                    , Transaction.create createTransactionPayload
                     )
 
         _ ->
@@ -378,5 +379,5 @@ subscriptions model =
         { onIndex = Just WalletIndexResponse
         , onShow = Just WalletShowResponse
         , onDelete = Just WalletDeleteResponse
-        , onError = WalletError
+        , onError = ApiError
         }
