@@ -9,12 +9,14 @@ import Url.Parser as Parser exposing ((</>), Parser)
 
 type Route
     = Home
+    | WalletDetail String
 
 
 parser : Parser (Route -> a) a
 parser =
     Parser.oneOf
         [ Parser.map Home Parser.top
+        , Parser.map WalletDetail (Parser.s "detail" </> Parser.string)
         ]
 
 
@@ -28,6 +30,9 @@ toString page =
     case page of
         Home ->
             Builder.absolute [] []
+
+        WalletDetail id ->
+            Builder.absolute [ "detail", id ] []
 
 
 fromUrl : Url -> Maybe Route

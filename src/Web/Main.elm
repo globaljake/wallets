@@ -10,6 +10,7 @@ import Web.Page as Page
 import Web.Page.Blank as Blank
 import Web.Page.Home as Home
 import Web.Page.NotFound as NotFound
+import Web.Page.WalletDetail as WalletDetail
 import Web.Route as Route exposing (Route)
 
 
@@ -17,6 +18,7 @@ type Model
     = Redirect Session
     | NotFound Session
     | Home Home.Model
+    | WalletDetail WalletDetail.Model
 
 
 init : Value -> Url -> Navigation.Key -> ( Model, Cmd Msg )
@@ -51,6 +53,9 @@ view model =
         Home subModel ->
             viewPage Page.Home HomeMsg (Home.view subModel)
 
+        WalletDetail subModel ->
+            viewPage Page.Home WalletDetailMsg (WalletDetail.view subModel)
+
 
 
 -- UPDATE
@@ -61,6 +66,7 @@ type Msg
     | ChangedUrl Url
     | ClickedLink Browser.UrlRequest
     | HomeMsg Home.Msg
+    | WalletDetailMsg WalletDetail.Msg
 
 
 toSession : Model -> Session
@@ -74,6 +80,9 @@ toSession page =
 
         Home subModel ->
             Home.toSession subModel
+
+        WalletDetail subModel ->
+            WalletDetail.toSession subModel
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -103,6 +112,10 @@ update msg model =
             Home.update subMsg subModel
                 |> updateWith Home HomeMsg model
 
+        ( WalletDetailMsg subMsg, WalletDetail subModel ) ->
+            WalletDetail.update subMsg subModel
+                |> updateWith WalletDetail WalletDetailMsg model
+
         ( _, _ ) ->
             ( model
             , Cmd.none
@@ -130,6 +143,10 @@ changeRouteTo maybeRoute model =
             Home.init session
                 |> updateWith Home HomeMsg model
 
+        Just (Route.WalletDetail id) ->
+            WalletDetail.init session id
+                |> updateWith WalletDetail WalletDetailMsg model
+
 
 
 -- SUBSCRIPTIONS --
@@ -147,6 +164,10 @@ subscriptions model =
         Home subModel ->
             Home.subscriptions subModel
                 |> Sub.map HomeMsg
+
+        WalletDetail subModel ->
+            WalletDetail.subscriptions subModel
+                |> Sub.map WalletDetailMsg
 
 
 main : Program Value Model Msg

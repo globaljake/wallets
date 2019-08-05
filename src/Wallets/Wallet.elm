@@ -10,12 +10,15 @@ port module Wallets.Wallet exposing
     , indexResponse
     , mockList
     , percentAvailable
+    , reloadTest
     , show
+    , showResponse
     , spent
     , title
     , update
     )
 
+import Dict exposing (Dict)
 import Json.Decode as Decode
 import Json.Decode.Pipeline as Decode
 import Json.Encode as Encode
@@ -107,26 +110,52 @@ decoder =
 port walletInbound : (Encode.Value -> msg) -> Sub msg
 
 
-indexResponse : (Result String (List Wallet) -> msg) -> Sub msg
-indexResponse tagger =
-    let
-        d =
-            Decode.field "tag" Decode.string
-                |> Decode.andThen
-                    (\tag ->
-                        case tag of
-                            "IndexResponse" ->
-                                Decode.field "wallets" (Decode.list decoder)
-
-                            _ ->
-                                Decode.fail "not right tag"
-                    )
-    in
+inboundHelp : (Result String a -> msg) -> Decode.Decoder a -> Sub msg
+inboundHelp tagger decoderA =
     walletInbound <|
         \value ->
-            Decode.decodeValue d value
+            Decode.decodeValue decoderA value
                 |> Result.mapError Decode.errorToString
                 |> tagger
+
+
+indexResponse :
+    (Result String { idList : List String, wallets : Dict String Wallet } -> msg)
+    -> Sub msg
+indexResponse tagger =
+    inboundHelp tagger
+        (Decode.field "tag" Decode.string
+            |> Decode.andThen
+                (\tag ->
+                    case tag of
+                        "IndexResponse" ->
+                            Decode.succeed
+                                (\idList wallets ->
+                                    { idList = idList, wallets = wallets }
+                                )
+                                |> Decode.required "idList" (Decode.list Decode.string)
+                                |> Decode.required "wallets" (Decode.dict decoder)
+
+                        _ ->
+                            Decode.fail "not right tag"
+                )
+        )
+
+
+showResponse : (Result String Wallet -> msg) -> Sub msg
+showResponse tagger =
+    inboundHelp tagger
+        (Decode.field "tag" Decode.string
+            |> Decode.andThen
+                (\tag ->
+                    case tag of
+                        "ShowResponse" ->
+                            Decode.field "wallet" decoder
+
+                        _ ->
+                            Decode.fail "not right tag"
+                )
+        )
 
 
 port walletOutbound : Encode.Value -> Cmd msg
@@ -161,6 +190,11 @@ show id_ =
             [ ( "tag", Encode.string "Show" )
             , ( "id", Encode.string id_ )
             ]
+
+
+reloadTest : Cmd msg
+reloadTest =
+    walletOutbound <| Encode.object [ ( "tag", Encode.string "ReloadTest" ) ]
 
 
 update : { id : String, amount : Int } -> Cmd msg

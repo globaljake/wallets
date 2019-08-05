@@ -1,4 +1,4 @@
-module Web.Page.Home exposing (Model, Msg, init, subscriptions, toSession, update, view)
+module Web.Page.WalletDetail exposing (Model, Msg, init, subscriptions, toSession, update, view)
 
 import Dict exposing (Dict)
 import Html exposing (Html)
@@ -18,7 +18,7 @@ import Web.Route as Route
 
 type alias Model =
     { session : Session
-    , idList : List String
+    , id : String
     , wallets : Dict String Wallet
     , modal : Maybe Modal
     }
@@ -39,9 +39,7 @@ type Msg
     | SetModal InitModal
     | CloseModal
     | ModalMsg ModalMsg
-    | WalletIndexResponse (Result String { idList : List String, wallets : Dict String Wallet })
     | WalletShowResponse (Result String Wallet)
-    | ReloadTest
 
 
 type InitModal
@@ -58,14 +56,14 @@ type Modal
 -- STATE
 
 
-init : Session -> ( Model, Cmd Msg )
-init session =
+init : Session -> String -> ( Model, Cmd Msg )
+init session id =
     ( { session = session
-      , idList = []
+      , id = id
       , wallets = Dict.empty
       , modal = Nothing
       }
-    , Wallet.index
+    , Wallet.show id
     )
 
 
@@ -88,16 +86,6 @@ update msg model =
         ModalMsg subMsg ->
             modalUpdate subMsg model
 
-        WalletIndexResponse (Ok { idList, wallets }) ->
-            ( { model | idList = idList, wallets = wallets }
-            , Cmd.none
-            )
-
-        WalletIndexResponse (Err _) ->
-            ( model
-            , Cmd.none
-            )
-
         WalletShowResponse (Ok wallet) ->
             ( { model | wallets = Dict.insert (Wallet.id wallet) wallet model.wallets }
             , Cmd.none
@@ -107,9 +95,6 @@ update msg model =
             ( model
             , Cmd.none
             )
-
-        ReloadTest ->
-            ( model, Wallet.reloadTest )
 
 
 modalInit : InitModal -> Modal
@@ -164,7 +149,7 @@ modalUpdate msg model =
 
 view : Model -> { title : String, content : Html Msg }
 view model =
-    { title = "Wallets"
+    { title = "Wallet"
     , content =
         Html.div [ Attributes.class "relative h-full" ]
             [ viewContent model
@@ -180,66 +165,91 @@ view model =
 
 viewContent : Model -> Html Msg
 viewContent model =
-    Html.div [ Attributes.class "h-full overflow-auto p-4" ]
+    Html.div [ Attributes.class "h-full overflow-auto" ]
         [ Html.div [ Attributes.class "flex flex-col" ]
-            [ Html.div
-                [ Attributes.class "flex items-center justify-between" ]
-                [ Html.span [ Attributes.class "text-4xl font-semibold leading-none" ]
-                    [ Html.text "Wallets"
+            [ Html.div [ Attributes.class "flex p-4 border-b items-center bg-white" ]
+                [ Html.a [ Route.href Route.Home ]
+                    [ Html.span
+                        [ Attributes.class "p-2 w-8 h-8 flex justify-center items-center font-semibold"
+                        ]
+                        [ Html.text "<" ]
                     ]
-                , Html.button
-                    [ Attributes.class "rounded-full h-10 w-10 bg-red-300"
-                    , Events.onClick ReloadTest
+                , Html.div [ Attributes.class "flex flex-1 justify-center" ]
+                    [ case Dict.get model.id model.wallets of
+                        Nothing ->
+                            Html.span [ Attributes.class "text-xl font-semibold" ]
+                                [ Html.text ""
+                                ]
+
+                        Just wallet ->
+                            Html.div [ Attributes.class "flex flex-col text-center" ]
+                                [ Html.span [ Attributes.class "text-4xl" ]
+                                    [ Html.text (Wallet.emoji wallet)
+                                    ]
+                                , Html.span [ Attributes.class "text-2xl font-semibold" ]
+                                    [ Html.text (Wallet.title wallet)
+                                    ]
+                                , Html.span
+                                    [ Attributes.class "text-4xl text-green-400 font-semibold"
+                                    ]
+                                    [ Html.text <| formatToDollars (Wallet.available wallet)
+                                    ]
+                                ]
                     ]
-                    []
-                ]
-            , Html.div [ Attributes.class "my-4 leading-none text-gray-500" ]
-                [ Html.span [] [ Html.text "AUGUST 2019" ]
+                , Html.div [ Attributes.class "p-2 w-8 h-8" ] []
                 ]
             ]
-        , Html.div [ Attributes.class "flex flex-col" ]
-            [ Html.div [ Attributes.class "flex flex-col" ]
-                (List.map item (model.idList |> List.filterMap (\x -> Dict.get x model.wallets)))
-            , Html.button
-                [ Attributes.class "text-xl font-semibold text-gray-500 text-center my-6"
-                , Events.onClick (SetModal InitAddWallet)
-                ]
-                [ Html.text "+ New Wallet"
-                ]
+        , Html.div [ Attributes.class "flex flex-col p-4" ]
+            [ Html.div [ Attributes.class "flex flex-col" ] []
+
+            -- (List.map item model.wallets)
+            , case Dict.get model.id model.wallets of
+                Nothing ->
+                    Html.span [ Attributes.class "text-xl font-semibold" ]
+                        [ Html.text ""
+                        ]
+
+                Just wallet ->
+                    Html.button
+                        [ Attributes.class "text-xl font-semibold text-gray-500 text-center my-6"
+                        , Events.onClick <| SetModal (InitSpend wallet)
+                        ]
+                        [ Html.text "Spend"
+                        ]
             ]
         ]
 
 
-item : Wallet -> Html Msg
-item wallet =
+formatToDollars : Int -> String
+formatToDollars int =
     let
-        formatToDollars : Int -> String
-        formatToDollars int =
-            let
-                sign =
-                    if int < 0 then
-                        "-$"
-
-                    else
-                        "$"
-            in
-            if int == 0 then
-                "$0"
-
-            else if abs int < 10 then
-                String.concat [ sign, ".0", String.fromInt (abs int) ]
+        sign =
+            if int < 0 then
+                "-$"
 
             else
-                String.concat
-                    [ sign
-                    , String.dropRight 2 (String.fromInt (abs int))
-                    , if String.right 2 (String.fromInt (abs int)) == "00" then
-                        ""
-
-                      else
-                        "." ++ String.right 2 (String.fromInt (abs int))
-                    ]
+                "$"
     in
+    if int == 0 then
+        "$0"
+
+    else if abs int < 10 then
+        String.concat [ sign, ".0", String.fromInt (abs int) ]
+
+    else
+        String.concat
+            [ sign
+            , String.dropRight 2 (String.fromInt (abs int))
+            , if String.right 2 (String.fromInt (abs int)) == "00" then
+                ""
+
+              else
+                "." ++ String.right 2 (String.fromInt (abs int))
+            ]
+
+
+item : Wallet -> Html Msg
+item wallet =
     Html.div
         [ Attributes.class "p-5 my-2 bg-white rounded-lg shadow"
         ]
@@ -364,7 +374,4 @@ viewModal modal =
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
-    Sub.batch
-        [ Wallet.indexResponse WalletIndexResponse
-        , Wallet.indexResponse WalletIndexResponse
-        ]
+    Wallet.showResponse WalletShowResponse

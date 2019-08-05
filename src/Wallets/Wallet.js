@@ -1,5 +1,5 @@
 const init = app => {
-  const saveAndSendAll = wallets => {
+  const save = wallets => {
     localStorage.setItem("wallets", JSON.stringify(wallets));
     app.ports.walletInbound.send({
       tag: "IndexResponse",
@@ -11,44 +11,62 @@ const init = app => {
   app.ports.walletOutbound.subscribe(({ tag, ...payload }) => {
     const wallets = JSON.parse(localStorage.getItem("wallets")) || {};
     switch (tag) {
-      case "Create":
-        const id = Date.now() + "";
-        const { title, emoji, budget, available } = payload;
-        const newWallet = { id, title, emoji, budget, available };
-
-        saveAndSendAll({ [id]: newWallet, ...wallets });
-        return;
-
       case "Index":
-        const walletsList = Object.keys(wallets)
-          .sort()
-          .map(key => wallets[key]);
-
         app.ports.walletInbound.send({
           tag: "IndexResponse",
-          wallets: walletsList
+          idList: Object.keys(wallets).sort(),
+          wallets: wallets
         });
         return;
 
       case "Show":
-        // const walletsList = Object.keys(wallets).map(key => wallets[key]);
+        if (!payload.id) return;
 
-        // app.ports.walletInbound.send({ tag, wallet: wallets[payload.id] });
-        location.reload(true);
+        app.ports.walletInbound.send({
+          tag: "ShowResponse",
+          wallet: wallets[payload.id]
+        });
+        return;
+
+      case "Create":
+        const { title, emoji, budget, available } = payload;
+        if (!title || !emoji || !budget || !available) return;
+        if (!wallets[payload.id]) return;
+
+        const id = Date.now() + "";
+        const newWallet = { id, title, emoji, budget, available };
+
+        save({ [id]: newWallet, ...wallets });
+        app.ports.walletInbound.send({
+          tag: "ShowResponse",
+          wallet: wallets[payload.id]
+        });
         return;
 
       case "Update":
-        if (payload.amount && wallets[payload.id]) {
-          wallets[payload.id].available =
-            wallets[payload.id].available - payload.amount;
-          saveAndSendAll(wallets);
-        }
+        if (!payload.id || !payload.amount) return;
+        if (!wallets[payload.id]) return;
 
+        wallets[payload.id].available =
+          wallets[payload.id].available - payload.amount;
+
+        save(wallets);
+        app.ports.walletInbound.send({
+          tag: "ShowResponse",
+          wallet: wallets[payload.id]
+        });
         return;
-      case "Delete":
-        delete wallets[payload.id];
-        saveAndSendAll(wallets);
 
+      case "Delete":
+        if (!payload.id) return;
+        if (!wallets[payload.id]) return;
+
+        delete wallets[payload.id];
+        save(wallets);
+        return;
+
+      case "ReloadTest":
+        location.reload(true);
         return;
 
       default:
