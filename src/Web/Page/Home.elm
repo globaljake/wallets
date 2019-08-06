@@ -276,23 +276,23 @@ item wallet =
                         [ Html.text <| formatToDollars (Wallet.available wallet)
                         ]
                     ]
-                ]
-            , Html.div [ Attributes.class "relative h-2 w-full mt-3 mb-2" ]
-                [ Html.div [ Attributes.class "relative h-full w-full bg-gray-300 rounded-full" ] []
-                , Html.div
-                    [ Attributes.classList
-                        [ ( "absolute inset-0 h-full rounded-full", True )
-                        , ( "bg-green-400", Wallet.available wallet >= 0 )
-                        , ( "bg-red-600", Wallet.available wallet < 0 )
-                        ]
-                    , Attributes.style "width"
-                        (String.concat
-                            [ String.fromFloat (Wallet.percentAvailable wallet)
-                            , "%"
+                , Html.div [ Attributes.class "relative h-2 w-full mt-3 mb-2" ]
+                    [ Html.div [ Attributes.class "relative h-full w-full bg-gray-300 rounded-full" ] []
+                    , Html.div
+                        [ Attributes.classList
+                            [ ( "absolute inset-0 h-full rounded-full", True )
+                            , ( "bg-green-400", Wallet.available wallet >= 0 )
+                            , ( "bg-red-600", Wallet.available wallet < 0 )
                             ]
-                        )
+                        , Attributes.style "width"
+                            (String.concat
+                                [ String.fromFloat (Wallet.percentAvailable wallet)
+                                , "%"
+                                ]
+                            )
+                        ]
+                        []
                     ]
-                    []
                 ]
             , Html.div [ Attributes.class "flex justify-between items center" ]
                 [ Html.div [ Attributes.class "text-left" ]

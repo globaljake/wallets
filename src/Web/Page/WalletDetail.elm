@@ -239,7 +239,11 @@ viewContent model =
                                     [ Html.text (Wallet.title wallet)
                                     ]
                                 , Html.span
-                                    [ Attributes.class "text-4xl text-green-400 font-semibold"
+                                    [ Attributes.classList
+                                        [ ( "text-4xl font-semibold", True )
+                                        , ( "text-red-600", Wallet.available wallet < 0 )
+                                        , ( "text-green-400", Wallet.available wallet > 0 )
+                                        ]
                                     ]
                                     [ Html.text <| formatToDollars (Wallet.available wallet)
                                     ]
@@ -254,18 +258,77 @@ viewContent model =
                         ]
 
                 Just wallet ->
-                    Html.div [ Attributes.class "flex justify-between" ]
-                        [ Html.button
-                            [ Attributes.class "text-lg p-4 font-semibold text-red-600 text-center my-6"
-                            , Events.onClick <| WalletDelete (Wallet.id wallet)
+                    Html.div [ Attributes.class "flex flex-col" ]
+                        [ Html.div [ Attributes.class "flex px-10" ]
+                            [ Html.div [ Attributes.class "relative h-2 w-full mt-3 mb-2" ]
+                                [ Html.div
+                                    [ Attributes.class "relative h-full w-full bg-gray-300 rounded-full"
+                                    ]
+                                    []
+                                , Html.div
+                                    [ Attributes.classList
+                                        [ ( "absolute inset-0 h-full rounded-full", True )
+                                        , ( "bg-green-400", Wallet.available wallet >= 0 )
+                                        , ( "bg-red-600", Wallet.available wallet < 0 )
+                                        ]
+                                    , Attributes.style "width"
+                                        (String.concat
+                                            [ String.fromFloat (Wallet.percentAvailable wallet)
+                                            , "%"
+                                            ]
+                                        )
+                                    ]
+                                    []
+                                ]
                             ]
-                            [ Html.text "Delete"
+                        , Html.div [ Attributes.class "flex justify-between items center px-10" ]
+                            [ Html.div [ Attributes.class "text-left" ]
+                                [ if Wallet.available wallet == 0 then
+                                    Html.span [ Attributes.class "text-sm font-semibold text-gray-600" ]
+                                        [ Html.text "Awesome! You Stayed on Budget."
+                                        ]
+                                    --   else if Wallet.available wallet < 0 then
+                                    --     Html.span [ Attributes.class "text-sm font-semibold text-grey-600" ]
+                                    --         [ Html.text "Great job!"
+                                    --         ]
+
+                                  else if Wallet.budget wallet == Wallet.available wallet then
+                                    Html.span [ Attributes.class "text-sm font-semibold text-green-400" ]
+                                        [ Html.text "Ready to Spend!"
+                                        ]
+
+                                  else
+                                    Html.span
+                                        [ Attributes.classList
+                                            [ ( "text-sm", True )
+                                            , ( "text-gray-600", Wallet.available wallet > 0 )
+                                            , ( "text-red-600", Wallet.available wallet < 0 )
+                                            ]
+                                        ]
+                                        [ Html.span [ Attributes.class "font-semibold" ]
+                                            [ Html.text <| formatToDollars (Wallet.spent wallet)
+                                            ]
+                                        , Html.span [ Attributes.class "px-1" ] [ Html.text "of" ]
+                                        , Html.span [ Attributes.class "font-semibold pr-1" ]
+                                            [ Html.text <| formatToDollars (Wallet.budget wallet)
+                                            ]
+                                        , Html.span [] [ Html.text "spent" ]
+                                        ]
+                                ]
                             ]
-                        , Html.button
-                            [ Attributes.class "text-lg p-4 font-semibold text-green-400 text-center my-6"
-                            , Events.onClick <| SetModal (InitSpend wallet)
-                            ]
-                            [ Html.text "Spend"
+                        , Html.div [ Attributes.class "flex justify-between" ]
+                            [ Html.button
+                                [ Attributes.class "text-lg p-4 font-semibold text-red-600 text-center my-6"
+                                , Events.onClick <| WalletDelete (Wallet.id wallet)
+                                ]
+                                [ Html.text "Delete"
+                                ]
+                            , Html.button
+                                [ Attributes.class "text-lg p-4 font-semibold text-green-400 text-center my-6"
+                                , Events.onClick <| SetModal (InitSpend wallet)
+                                ]
+                                [ Html.text "Spend"
+                                ]
                             ]
                         ]
             ]

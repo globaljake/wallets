@@ -52,7 +52,7 @@ view (Model model) =
             [ Html.input
                 [ Attributes.class "w-full p-2 border rounded"
                 , Attributes.value model.descriptionField
-                , Attributes.placeholder "Description"
+                , Attributes.placeholder "Description (optional)"
                 , Events.onInput DescriptionFieldEntered
                 ]
                 []
