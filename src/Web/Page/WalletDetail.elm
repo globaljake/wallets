@@ -256,13 +256,13 @@ viewContent model =
                 Just wallet ->
                     Html.div [ Attributes.class "flex justify-between" ]
                         [ Html.button
-                            [ Attributes.class "text-lg p-4 font-semibold text-red-500 text-center my-6"
+                            [ Attributes.class "text-lg p-4 font-semibold text-red-600 text-center my-6"
                             , Events.onClick <| WalletDelete (Wallet.id wallet)
                             ]
                             [ Html.text "Delete"
                             ]
                         , Html.button
-                            [ Attributes.class "text-lg p-4 font-semibold text-green-500 text-center my-6"
+                            [ Attributes.class "text-lg p-4 font-semibold text-green-400 text-center my-6"
                             , Events.onClick <| SetModal (InitSpend wallet)
                             ]
                             [ Html.text "Spend"
@@ -270,7 +270,9 @@ viewContent model =
                         ]
             ]
         , Html.div [ Attributes.class "flex flex-col bg-white" ]
-            [ Html.div [ Attributes.class "flex text-lg p-4 bg-gray-100 font-semibold" ]
+            [ Html.div
+                [ Attributes.class "flex text-gray-800 text-lg p-4 bg-gray-100 font-semibold"
+                ]
                 [ Html.text "AUGUST"
                 ]
             , Html.div [ Attributes.class "flex flex-col p-4" ]
@@ -331,7 +333,7 @@ item transaction =
             [ Html.span
                 [ Attributes.classList
                     [ ( "font-semibold text-lg", True )
-                    , ( "text-red-400", amt < 0 )
+                    , ( "text-red-600", amt < 0 )
                     , ( "text-green-400", amt > 0 )
                     ]
                 ]
