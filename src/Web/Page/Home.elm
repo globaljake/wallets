@@ -43,6 +43,7 @@ type Msg
     | WalletShowResponse (Result String Wallet)
     | WalletIndexResponse (Result String { idList : List String, wallets : Dict String Wallet })
     | WalletDeleteResponse (Result String String)
+    | TransactionShowResponse (Result String Transaction)
     | ApiError String
     | ReloadTest
 
@@ -117,6 +118,16 @@ update msg model =
             )
 
         WalletDeleteResponse (Err _) ->
+            ( model
+            , Cmd.none
+            )
+
+        TransactionShowResponse (Ok transaction) ->
+            ( model
+            , Wallet.show (Transaction.walletId transaction)
+            )
+
+        TransactionShowResponse (Err _) ->
             ( model
             , Cmd.none
             )
@@ -375,9 +386,16 @@ viewModal modal =
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
-    Wallet.inbound
-        { onIndex = Just WalletIndexResponse
-        , onShow = Just WalletShowResponse
-        , onDelete = Just WalletDeleteResponse
-        , onError = ApiError
-        }
+    Sub.batch
+        [ Wallet.inbound
+            { onIndex = Just WalletIndexResponse
+            , onShow = Just WalletShowResponse
+            , onDelete = Just WalletDeleteResponse
+            , onError = ApiError
+            }
+        , Transaction.inbound
+            { onIndex = Nothing
+            , onShow = Just TransactionShowResponse
+            , onError = ApiError
+            }
+        ]
