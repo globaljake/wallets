@@ -14,7 +14,7 @@ local :
     -> Task String a
 local { url, payload, decoder } =
     Http.task
-        { method = "POST"
+        { method = "GET"
         , headers = []
         , url = "localrequest/" ++ url
         , body = Http.jsonBody (Maybe.withDefault Encode.null payload)

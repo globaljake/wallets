@@ -3,7 +3,7 @@
   "scripts": {
     "prebuild": "rimraf dist",
     "build": "webpack --mode production",
-    "deploy": "aws s3 sync ./dist s3://wallets.globaljake.com --acl public-read",
+    "deploy": "aws s3 sync ./dist s3://wallets.globaljake.com --acl public-read --delete",
     "start": "webpack --mode development --watch-stdin",
     "serve": "cd ./dist && serve -p 3000 -s && cd .."
   },
