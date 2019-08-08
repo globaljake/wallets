@@ -3,25 +3,24 @@ port module Wallets.Wallet exposing
     , available
     , budget
     , create
+    , decoder
     , delete
     , emoji
     , id
-    , inbound
     , index
     , mockList
     , percentAvailable
-    , reloadTest
     , show
     , spent
-    ,  title
-       -- , update
-
+    , title
     )
 
 import Dict exposing (Dict)
 import Json.Decode as Decode
 import Json.Decode.Pipeline as Decode
 import Json.Encode as Encode
+import Task exposing (Task)
+import Web.Api as Api
 
 
 
@@ -107,128 +106,48 @@ decoder =
         |> Decode.map Wallet
 
 
-port walletInbound : (Encode.Value -> msg) -> Sub msg
-
-
-inbound :
-    { onIndex : Maybe (Result String { idList : List String, wallets : Dict String Wallet } -> msg)
-    , onShow : Maybe (Result String Wallet -> msg)
-    , onDelete : Maybe (Result String String -> msg)
-    , onError : String -> msg
-    }
-    -> Sub msg
-inbound config =
-    let
-        decoder_ =
-            Decode.field "tag" Decode.string
-                |> Decode.andThen
-                    (\tag ->
-                        case tag of
-                            "IndexResponse" ->
-                                Decode.succeed
-                                    (\idList wallets ->
-                                        case config.onIndex of
-                                            Just tagger ->
-                                                tagger (Ok { idList = idList, wallets = wallets })
-
-                                            Nothing ->
-                                                config.onError "No msg given for IndexResponse"
-                                    )
-                                    |> Decode.required "idList" (Decode.list Decode.string)
-                                    |> Decode.required "wallets" (Decode.dict decoder)
-
-                            "ShowResponse" ->
-                                Decode.succeed
-                                    (\wallet ->
-                                        case config.onShow of
-                                            Just tagger ->
-                                                tagger (Ok wallet)
-
-                                            Nothing ->
-                                                config.onError "No msg given for ShowResponse"
-                                    )
-                                    |> Decode.required "wallet" decoder
-
-                            "DeleteResponse" ->
-                                Decode.succeed
-                                    (\id_ ->
-                                        case config.onDelete of
-                                            Just tagger ->
-                                                tagger (Ok id_)
-
-                                            Nothing ->
-                                                config.onError "No msg given for DeleteResponse"
-                                    )
-                                    |> Decode.required "id" Decode.string
-
-                            e ->
-                                Decode.fail ("Cannot decode tag of " ++ e)
-                    )
-    in
-    walletInbound <|
-        \value ->
-            case Decode.decodeValue decoder_ value of
-                Ok msg ->
-                    msg
-
-                Err e ->
-                    config.onError (Decode.errorToString e)
-
-
-port walletOutbound : Encode.Value -> Cmd msg
-
-
-create :
-    { title : String
-    , emoji : String
-    , budget : Int
-    }
-    -> Cmd msg
+create : { title : String, emoji : String, budget : Int } -> Task String Wallet
 create config =
-    walletOutbound <|
-        Encode.object
-            [ ( "tag", Encode.string "Create" )
-            , ( "title", Encode.string config.title )
-            , ( "emoji", Encode.string config.emoji )
-            , ( "budget", Encode.int config.budget )
-            , ( "available", Encode.int config.budget )
-            ]
+    Api.local
+        { url = "wallet/create"
+        , payload =
+            Just <|
+                Encode.object
+                    [ ( "title", Encode.string config.title )
+                    , ( "emoji", Encode.string config.emoji )
+                    , ( "budget", Encode.int config.budget )
+                    , ( "available", Encode.int config.budget )
+                    ]
+        , decoder = Decode.field "wallet" decoder
+        }
 
 
-index : Cmd msg
+index : Task String { feed : List String, wallets : Dict String Wallet }
 index =
-    walletOutbound <| Encode.object [ ( "tag", Encode.string "Index" ) ]
+    Api.local
+        { url = "wallet/index"
+        , payload = Nothing
+        , decoder =
+            Decode.succeed
+                (\feed wallets -> { feed = feed, wallets = wallets })
+                |> Decode.required "feed" (Decode.list Decode.string)
+                |> Decode.required "wallets" (Decode.dict decoder)
+        }
 
 
-show : String -> Cmd msg
+show : String -> Task String Wallet
 show id_ =
-    walletOutbound <|
-        Encode.object
-            [ ( "tag", Encode.string "Show" )
-            , ( "id", Encode.string id_ )
-            ]
+    Api.local
+        { url = "wallet/show"
+        , payload = Just <| Encode.object [ ( "id", Encode.string id_ ) ]
+        , decoder = Decode.field "wallet" decoder
+        }
 
 
-reloadTest : Cmd msg
-reloadTest =
-    walletOutbound <| Encode.object [ ( "tag", Encode.string "ReloadTest" ) ]
-
-
-
--- update : { id : String, amount : Int } -> Cmd msg
--- update config =
---     walletOutbound <|
---         Encode.object
---             [ ( "tag", Encode.string "Update" )
---             , ( "id", Encode.string config.id )
---             , ( "amount", Encode.int config.amount )
---             ]
-
-
-delete : String -> Cmd msg
+delete : String -> Task String String
 delete id_ =
-    walletOutbound <|
-        Encode.object
-            [ ( "tag", Encode.string "Delete" )
-            , ( "id", Encode.string id_ )
-            ]
+    Api.local
+        { url = "wallet/delete_"
+        , payload = Just <| Encode.object [ ( "id", Encode.string id_ ) ]
+        , decoder = Decode.field "id" Decode.string
+        }

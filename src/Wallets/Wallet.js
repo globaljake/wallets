@@ -1,75 +1,58 @@
-const init = app => {
-  const save = wallets => {
-    localStorage.setItem("wallets", JSON.stringify(wallets));
-  };
-  app.ports.walletOutbound.subscribe(({ tag, ...payload }) => {
-    const wallets = JSON.parse(localStorage.getItem("wallets")) || {};
-    switch (tag) {
-      case "Index":
-        app.ports.walletInbound.send({
-          tag: "IndexResponse",
-          idList: Object.keys(wallets).sort(),
-          wallets: wallets
-        });
-        return;
+const _save = wallets => {
+  localStorage.setItem("wallets", JSON.stringify(wallets));
+};
 
-      case "Show":
-        if (!payload.id) return;
+const _get = () => JSON.parse(localStorage.getItem("wallets")) || {};
 
-        app.ports.walletInbound.send({
-          tag: "ShowResponse",
-          wallet: wallets[payload.id]
-        });
-        return;
+const create = ({ title, emoji, budget, available }) => {
+  if (!title || !emoji || !budget || !available)
+    return Promise.reject("Request payload insufficient");
+  const wallets = _get();
 
-      case "Create":
-        const { title, emoji, budget, available } = payload;
-        if (!title || !emoji || !budget || !available) return;
+  const id = Date.now() + "_wallet";
+  const newWallet = { id, title, emoji, budget, available };
 
-        const id = Date.now() + "_wallet";
-        const newWallet = { id, title, emoji, budget, available };
+  _save({ [id]: newWallet, ...wallets });
+  return Promise.resolve({ wallet: newWallet });
+};
 
-        save({ [id]: newWallet, ...wallets });
-        app.ports.walletInbound.send({
-          tag: "ShowResponse",
-          wallet: newWallet
-        });
-        return;
+const index = () => {
+  const wallets = _get();
 
-      // case "Update":
-      //   if (!payload.id || !payload.amount) return;
-      //   if (!wallets[payload.id]) return;
-
-      //   wallets[payload.id].available =
-      //     wallets[payload.id].available - payload.amount;
-
-      //   save(wallets);
-      //   app.ports.walletInbound.send({
-      //     tag: "ShowResponse",
-      //     wallet: wallets[payload.id]
-      //   });
-      //   return;
-
-      case "Delete":
-        if (!payload.id) return;
-        if (!wallets[payload.id]) return;
-
-        delete wallets[payload.id];
-        save(wallets);
-        app.ports.walletInbound.send({
-          tag: "DeleteResponse",
-          id: payload.id
-        });
-        return;
-
-      case "ReloadTest":
-        location.reload(true);
-        return;
-
-      default:
-        return;
-    }
+  return Promise.resolve({
+    feed: Object.keys(wallets).sort(),
+    wallets: wallets
   });
 };
 
-export default { init };
+const show = ({ id }) => {
+  if (!id) return Promise.reject("Request payload insufficient");
+  const wallets = _get();
+  if (!wallets[id]) return Promise.reject("Item not found");
+
+  return Promise.resolve({ wallet: wallets[id] });
+};
+
+const update = ({ id, title, emoji, budget }) => {
+  if (!id) return Promise.reject("Request payload insufficient");
+  const wallets = _get();
+  if (!wallets[id]) return Promise.reject("Item not found");
+  if (title) wallets[id].title = title;
+  if (emoji) wallets[id].emoji = emoji;
+  if (budget) wallets[id].budget = budget;
+  _save(wallets);
+
+  return Promise.resolve({ wallet: wallets[id] });
+};
+
+const delete_ = ({ id }) => {
+  if (!id) return Promise.reject("Request payload insufficient");
+  const wallets = _get();
+  if (!wallets[id]) return Promise.reject("Item not found");
+  delete wallets[id];
+  _save(wallets);
+
+  return Promise.resolve({ id });
+};
+
+export default { create, index, show, update, delete_ };

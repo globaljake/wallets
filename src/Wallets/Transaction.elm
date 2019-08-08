@@ -4,7 +4,6 @@ port module Wallets.Transaction exposing
     , create
     , description
     , id
-    , inbound
     , index
     , indexByWalletId
     , walletId
@@ -14,6 +13,8 @@ import Dict exposing (Dict)
 import Json.Decode as Decode
 import Json.Decode.Pipeline as Decode
 import Json.Encode as Encode
+import Task exposing (Task)
+import Web.Api as Api
 
 
 
@@ -72,94 +73,60 @@ decoder =
         |> Decode.map Transaction
 
 
-port transactionInbound : (Encode.Value -> msg) -> Sub msg
-
-
-inbound :
-    { onIndex : Maybe (Result String { idList : List String, transactions : Dict String Transaction } -> msg)
-    , onShow : Maybe (Result String Transaction -> msg)
-    , onError : String -> msg
-    }
-    -> Sub msg
-inbound config =
-    let
-        decoder_ =
-            Decode.field "tag" Decode.string
-                |> Decode.andThen
-                    (\tag ->
-                        case tag of
-                            "IndexResponse" ->
-                                Decode.succeed
-                                    (\idList transactions ->
-                                        case config.onIndex of
-                                            Just tagger ->
-                                                tagger
-                                                    (Ok
-                                                        { idList = idList
-                                                        , transactions = transactions
-                                                        }
-                                                    )
-
-                                            Nothing ->
-                                                config.onError "No msg given for IndexResponse"
-                                    )
-                                    |> Decode.required "idList" (Decode.list Decode.string)
-                                    |> Decode.required "transactions" (Decode.dict decoder)
-
-                            "ShowResponse" ->
-                                Decode.succeed
-                                    (\transaction ->
-                                        case config.onShow of
-                                            Just tagger ->
-                                                tagger (Ok transaction)
-
-                                            Nothing ->
-                                                config.onError "No msg given for ShowResponse"
-                                    )
-                                    |> Decode.required "transaction" decoder
-
-                            e ->
-                                Decode.fail ("Cannot decode tag of " ++ e)
-                    )
-    in
-    transactionInbound <|
-        \value ->
-            case Decode.decodeValue decoder_ value of
-                Ok msg ->
-                    msg
-
-                Err e ->
-                    config.onError (Decode.errorToString e)
-
-
-port transactionOutbound : Encode.Value -> Cmd msg
-
-
-create :
-    { walletId : String
-    , description : String
-    , amount : Int
-    }
-    -> Cmd msg
+create : { walletId : String, amount : Int, description : String } -> Task String Transaction
 create config =
-    transactionOutbound <|
-        Encode.object
-            [ ( "tag", Encode.string "Create" )
-            , ( "walletId", Encode.string config.walletId )
-            , ( "description", Encode.string config.description )
-            , ( "amount", Encode.int config.amount )
-            ]
+    Api.local
+        { url = "transaction/create"
+        , payload =
+            Just <|
+                Encode.object
+                    [ ( "walletId", Encode.string config.walletId )
+                    , ( "amount", Encode.int config.amount )
+                    , ( "description", Encode.string config.description )
+                    ]
+        , decoder = Decode.field "transaction" decoder
+        }
 
 
-index : Cmd msg
+index : Task String { feed : List String, transactions : Dict String Transaction }
 index =
-    transactionOutbound <| Encode.object [ ( "tag", Encode.string "Index" ) ]
+    Api.local
+        { url = "transaction/index"
+        , payload = Nothing
+        , decoder =
+            Decode.succeed
+                (\feed transactions -> { feed = feed, transactions = transactions })
+                |> Decode.required "feed" (Decode.list Decode.string)
+                |> Decode.required "transactions" (Decode.dict decoder)
+        }
 
 
-indexByWalletId : String -> Cmd msg
-indexByWalletId id_ =
-    transactionOutbound <|
-        Encode.object
-            [ ( "tag", Encode.string "IndexByWalletId" )
-            , ( "walletId", Encode.string id_ )
-            ]
+indexByWalletId : String -> Task String { feed : List String, transactions : Dict String Transaction }
+indexByWalletId walletId_ =
+    Api.local
+        { url = "transaction/indexByWalletId"
+        , payload = Just <| Encode.object [ ( "walletId", Encode.string walletId_ ) ]
+        , decoder =
+            Decode.succeed
+                (\feed transactions -> { feed = feed, transactions = transactions })
+                |> Decode.required "feed" (Decode.list Decode.string)
+                |> Decode.required "transactions" (Decode.dict decoder)
+        }
+
+
+show : String -> Task String Transaction
+show id_ =
+    Api.local
+        { url = "transaction/show"
+        , payload = Just <| Encode.object [ ( "id", Encode.string id_ ) ]
+        , decoder = Decode.field "transaction" decoder
+        }
+
+
+delete : String -> Task String String
+delete id_ =
+    Api.local
+        { url = "transaction/delete_"
+        , payload = Just <| Encode.object [ ( "id", Encode.string id_ ) ]
+        , decoder = Decode.field "id" Decode.string
+        }

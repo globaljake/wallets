@@ -1,58 +1,77 @@
-const init = app => {
-  const save = transactions => {
-    localStorage.setItem("transactions", JSON.stringify(transactions));
-  };
-  app.ports.transactionOutbound.subscribe(({ tag, ...payload }) => {
-    const transactions = JSON.parse(localStorage.getItem("transactions")) || {};
-    switch (tag) {
-      case "Index":
-        app.ports.transactionInbound.send({
-          tag: "IndexResponse",
-          idList: Object.keys(transactions).sort(),
-          transactions: transactions
-        });
-        return;
+const _save = transactions => {
+  localStorage.setItem("transactions", JSON.stringify(transactions));
+};
 
-      case "IndexByWalletId":
-        if (!payload.walletId) return;
-        const transByWalletId = Object.keys(transactions).reduce((acc, key) => {
-          const current = transactions[key];
-          if (current.walletId === payload.walletId) {
-            acc[current.id] = { ...current };
-          }
-          return acc;
-        }, {});
+const _get = () => JSON.parse(localStorage.getItem("transactions")) || {};
 
-        app.ports.transactionInbound.send({
-          tag: "IndexResponse",
-          idList: Object.keys(transByWalletId).sort(),
-          transactions: transByWalletId
-        });
-        return;
+const create = ({ walletId, amount, description = "" }) => {
+  if (!walletId || !amount)
+    return Promise.reject("Request payload insufficient");
+  const wallets = JSON.parse(localStorage.getItem("wallets")) || {};
+  if (!wallets[walletId]) return Promise.reject("Item not found");
 
-      case "Create":
-        const { walletId, description, amount } = payload;
-        const wallets = JSON.parse(localStorage.getItem("wallets")) || {};
-        if (!walletId || !description || !amount) return;
-        if (!wallets[walletId]) return;
+  const transactions = _get();
+  const id = Date.now() + "_transaction";
+  const newTransaction = { id, walletId, amount, description };
+  _save({ [id]: newTransaction, ...transactions });
 
-        const id = Date.now() + "_transaction";
-        const newTransaction = { id, walletId, description, amount };
-        save({ [id]: newTransaction, ...transactions });
+  wallets[walletId].available = wallets[walletId].available - amount;
+  localStorage.setItem("wallets", JSON.stringify(wallets));
 
-        wallets[walletId].available = wallets[walletId].available - amount;
-        localStorage.setItem("wallets", JSON.stringify(wallets));
+  return Promise.resolve({ transaction: newTransaction });
+};
 
-        app.ports.transactionInbound.send({
-          tag: "ShowResponse",
-          transaction: newTransaction
-        });
-        return;
+const index = () => {
+  const transactions = _get();
 
-      default:
-        return;
+  return Promise.resolve({
+    feed: Object.keys(transactions).sort(),
+    transactions: transactions
+  });
+};
+const indexByWalletId = ({ walletId }) => {
+  const transactions = _get();
+  const transByWalletId = Object.keys(transactions).reduce((acc, key) => {
+    const current = transactions[key];
+    if (current.walletId === walletId) {
+      acc[current.id] = { ...current };
     }
+    return acc;
+  }, {});
+
+  return Promise.resolve({
+    feed: Object.keys(transByWalletId).sort(),
+    transactions: transByWalletId
   });
 };
 
-export default { init };
+const show = ({ id }) => {
+  if (!id) return Promise.reject("Request payload insufficient");
+  const transactions = _get();
+  if (!transactions[id]) return Promise.reject("Item not found");
+
+  return Promise.resolve({ transaction: transactions[id] });
+};
+
+const update = ({ id, amount, description }) => {
+  if (!id) return Promise.reject("Request payload insufficient");
+  const transactions = _get();
+  if (!transactions[id]) return Promise.reject("Item not found");
+  if (amount) transactions[id].amount = amount;
+  if (description) transactions[id].description = description;
+  _save(transactions);
+
+  return Promise.resolve({ transaction: transactions[id] });
+};
+
+const delete_ = ({ id }) => {
+  if (!id) return Promise.reject("Request payload insufficient");
+  const transactions = _get();
+  if (!transactions[id]) return Promise.reject("Item not found");
+  delete transactions[id];
+  _save(transactions);
+
+  return Promise.resolve({ id });
+};
+
+export default { create, index, indexByWalletId, show, update, delete_ };

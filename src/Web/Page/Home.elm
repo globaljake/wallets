@@ -1,9 +1,11 @@
 module Web.Page.Home exposing (Model, Msg, init, subscriptions, toSession, update, view)
 
+import Browser.Navigation as Navigation
 import Dict exposing (Dict)
 import Html exposing (Html)
 import Html.Attributes as Attributes
 import Html.Events as Events
+import Task
 import Wallets.Session as Session exposing (Session)
 import Wallets.Transaction as Transaction exposing (Transaction)
 import Wallets.Ui.AddWallet as AddWallet
@@ -19,7 +21,7 @@ import Web.Route as Route
 
 type alias Model =
     { session : Session
-    , idList : List String
+    , feed : List String
     , wallets : Dict String Wallet
     , modal : Maybe Modal
     }
@@ -41,11 +43,10 @@ type Msg
     | CloseModal
     | ModalMsg ModalMsg
     | WalletShowResponse (Result String Wallet)
-    | WalletIndexResponse (Result String { idList : List String, wallets : Dict String Wallet })
+    | WalletIndexResponse (Result String { feed : List String, wallets : Dict String Wallet })
     | WalletDeleteResponse (Result String String)
     | TransactionShowResponse (Result String Transaction)
-    | ApiError String
-    | ReloadTest
+    | Reload
 
 
 type InitModal
@@ -65,11 +66,14 @@ type Modal
 init : Session -> ( Model, Cmd Msg )
 init session =
     ( { session = session
-      , idList = []
+      , feed = []
       , wallets = Dict.empty
       , modal = Nothing
       }
-    , Wallet.index
+    , Cmd.batch
+        [ Wallet.index
+            |> Task.attempt WalletIndexResponse
+        ]
     )
 
 
@@ -95,6 +99,7 @@ update msg model =
         WalletShowResponse (Ok wallet) ->
             ( { model | wallets = Dict.insert (Wallet.id wallet) wallet model.wallets }
             , Wallet.index
+                |> Task.attempt WalletIndexResponse
             )
 
         WalletShowResponse (Err _) ->
@@ -102,8 +107,8 @@ update msg model =
             , Cmd.none
             )
 
-        WalletIndexResponse (Ok { idList, wallets }) ->
-            ( { model | idList = idList, wallets = wallets }
+        WalletIndexResponse (Ok { feed, wallets }) ->
+            ( { model | feed = feed, wallets = wallets }
             , Cmd.none
             )
 
@@ -125,6 +130,7 @@ update msg model =
         TransactionShowResponse (Ok transaction) ->
             ( model
             , Wallet.show (Transaction.walletId transaction)
+                |> Task.attempt WalletShowResponse
             )
 
         TransactionShowResponse (Err _) ->
@@ -132,11 +138,8 @@ update msg model =
             , Cmd.none
             )
 
-        ApiError err ->
-            ( model, Cmd.none )
-
-        ReloadTest ->
-            ( model, Wallet.reloadTest )
+        Reload ->
+            ( model, Navigation.reloadAndSkipCache )
 
 
 modalInit : InitModal -> Modal
@@ -162,6 +165,7 @@ modalUpdate msg model =
                 ( _, AddWallet.RequestSubmit createPayload ) ->
                     ( { model | modal = Nothing }
                     , Wallet.create createPayload
+                        |> Task.attempt WalletShowResponse
                     )
 
         ( SpendMsg subMsg, Just (Spend subModel) ) ->
@@ -174,6 +178,7 @@ modalUpdate msg model =
                 ( _, Spend.RequestSubmit createTransactionPayload ) ->
                     ( { model | modal = Nothing }
                     , Transaction.create createTransactionPayload
+                        |> Task.attempt TransactionShowResponse
                     )
 
         _ ->
@@ -207,11 +212,11 @@ viewContent model =
             [ Html.div
                 [ Attributes.class "flex items-center justify-between" ]
                 [ Html.span [ Attributes.class "text-4xl font-semibold leading-none" ]
-                    [ Html.text "Wallets"
+                    [ Html.text "Wallets (Alpha)"
                     ]
                 , Html.button
                     [ Attributes.class "rounded-full h-10 w-10 bg-red-300"
-                    , Events.onClick ReloadTest
+                    , Events.onClick Reload
                     ]
                     []
                 ]
@@ -221,7 +226,7 @@ viewContent model =
             ]
         , Html.div [ Attributes.class "flex flex-col" ]
             [ Html.div [ Attributes.class "flex flex-col" ]
-                (List.map item (model.idList |> List.filterMap (\x -> Dict.get x model.wallets)))
+                (List.map item (model.feed |> List.filterMap (\x -> Dict.get x model.wallets)))
             , Html.button
                 [ Attributes.class "text-xl font-semibold text-gray-500 text-center my-6"
                 , Events.onClick (SetModal InitAddWallet)
@@ -386,16 +391,4 @@ viewModal modal =
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
-    Sub.batch
-        [ Wallet.inbound
-            { onIndex = Just WalletIndexResponse
-            , onShow = Just WalletShowResponse
-            , onDelete = Just WalletDeleteResponse
-            , onError = ApiError
-            }
-        , Transaction.inbound
-            { onIndex = Nothing
-            , onShow = Just TransactionShowResponse
-            , onError = ApiError
-            }
-        ]
+    Sub.none

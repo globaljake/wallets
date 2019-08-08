@@ -4,6 +4,7 @@ import Dict exposing (Dict)
 import Html exposing (Html)
 import Html.Attributes as Attributes
 import Html.Events as Events
+import Task
 import Wallets.Session as Session exposing (Session)
 import Wallets.Transaction as Transaction exposing (Transaction)
 import Wallets.Ui.AddWallet as AddWallet
@@ -20,7 +21,7 @@ import Web.Route as Route
 type alias Model =
     { session : Session
     , id : String
-    , transactionIdList : List String
+    , transactionFeed : List String
     , wallets : Dict String Wallet
     , transactions : Dict String Transaction
     , modal : Maybe Modal
@@ -45,8 +46,7 @@ type Msg
     | WalletShowResponse (Result String Wallet)
     | WalletDelete String
     | WalletDeleteResponse (Result String String)
-    | ApiError String
-    | TransactionIndexResponse (Result String { idList : List String, transactions : Dict String Transaction })
+    | TransactionIndexResponse (Result String { feed : List String, transactions : Dict String Transaction })
     | TransactionShowResponse (Result String Transaction)
 
 
@@ -68,12 +68,17 @@ init : Session -> String -> ( Model, Cmd Msg )
 init session id =
     ( { session = session
       , id = id
-      , transactionIdList = []
+      , transactionFeed = []
       , wallets = Dict.empty
       , transactions = Dict.empty
       , modal = Nothing
       }
-    , Cmd.batch [ Transaction.indexByWalletId id, Wallet.show id ]
+    , Cmd.batch
+        [ Transaction.indexByWalletId id
+            |> Task.attempt TransactionIndexResponse
+        , Wallet.show id
+            |> Task.attempt WalletShowResponse
+        ]
     )
 
 
@@ -109,6 +114,7 @@ update msg model =
         WalletDelete id ->
             ( model
             , Wallet.delete id
+                |> Task.attempt WalletDeleteResponse
             )
 
         WalletDeleteResponse (Ok id) ->
@@ -128,7 +134,9 @@ update msg model =
               }
             , Cmd.batch
                 [ Transaction.indexByWalletId (Transaction.walletId transaction)
+                    |> Task.attempt TransactionIndexResponse
                 , Wallet.show (Transaction.walletId transaction)
+                    |> Task.attempt WalletShowResponse
                 ]
             )
 
@@ -137,8 +145,8 @@ update msg model =
             , Cmd.none
             )
 
-        TransactionIndexResponse (Ok { idList, transactions }) ->
-            ( { model | transactionIdList = idList, transactions = transactions }
+        TransactionIndexResponse (Ok { feed, transactions }) ->
+            ( { model | transactionFeed = feed, transactions = transactions }
             , Cmd.none
             )
 
@@ -146,9 +154,6 @@ update msg model =
             ( model
             , Cmd.none
             )
-
-        ApiError err ->
-            ( model, Cmd.none )
 
 
 modalInit : InitModal -> Modal
@@ -174,6 +179,7 @@ modalUpdate msg model =
                 ( _, AddWallet.RequestSubmit createPayload ) ->
                     ( { model | modal = Nothing }
                     , Wallet.create createPayload
+                        |> Task.attempt WalletShowResponse
                     )
 
         ( SpendMsg subMsg, Just (Spend subModel) ) ->
@@ -186,6 +192,7 @@ modalUpdate msg model =
                 ( _, Spend.RequestSubmit transactionCreatePayload ) ->
                     ( { model | modal = Nothing }
                     , Transaction.create transactionCreatePayload
+                        |> Task.attempt TransactionShowResponse
                     )
 
         _ ->
@@ -339,7 +346,7 @@ viewContent model =
                 [ Html.text "AUGUST"
                 ]
             , Html.div [ Attributes.class "flex flex-col p-4" ]
-                (List.map item (model.transactionIdList |> List.filterMap (\x -> Dict.get x model.transactions)))
+                (List.map item (model.transactionFeed |> List.filterMap (\x -> Dict.get x model.transactions)))
             ]
         ]
 
@@ -446,16 +453,4 @@ viewModal modal =
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
-    Sub.batch
-        [ Wallet.inbound
-            { onIndex = Nothing
-            , onShow = Just WalletShowResponse
-            , onDelete = Just WalletDeleteResponse
-            , onError = ApiError
-            }
-        , Transaction.inbound
-            { onIndex = Just TransactionIndexResponse
-            , onShow = Just TransactionShowResponse
-            , onError = ApiError
-            }
-        ]
+    Sub.none
