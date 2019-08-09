@@ -10,6 +10,7 @@ import Wallets.Session as Session exposing (Session)
 import Wallets.Transaction as Transaction exposing (Transaction)
 import Wallets.Ui.AddWallet as AddWallet
 import Wallets.Ui.Button as Button
+import Wallets.Ui.Icon as Icon
 import Wallets.Ui.Spend as Spend
 import Wallets.Wallet as Wallet exposing (Wallet)
 import Web.Route as Route
@@ -207,24 +208,34 @@ view model =
 
 viewContent : Model -> Html Msg
 viewContent model =
-    Html.div [ Attributes.class "h-full overflow-auto p-4" ]
-        [ Html.div [ Attributes.class "flex flex-col" ]
+    Html.div [ Attributes.class "h-full relative overflow-auto" ]
+        [ Html.header [ Attributes.class "flex relative z-10" ]
             [ Html.div
-                [ Attributes.class "flex items-center justify-between" ]
-                [ Html.span [ Attributes.class "text-4xl font-semibold leading-none" ]
-                    [ Html.text "Wallets (Alpha)"
-                    ]
-                , Html.button
-                    [ Attributes.class "rounded-full h-10 w-10 bg-red-300"
-                    , Events.onClick Reload
-                    ]
-                    []
+                [ Attributes.class "flex flex-1 mb-2 justify-center items-center"
+                , Attributes.style "height" "105px"
                 ]
-            , Html.div [ Attributes.class "my-4 leading-none text-gray-500" ]
-                [ Html.span [] [ Html.text "AUGUST 2019" ]
+                [ Html.span [ Attributes.class "h-6 w-6" ] [ Icon.check ]
+                ]
+            , Html.div
+                [ Attributes.class "flex flex-col fixed top-0 left-0 px-4 pt-4 bg-white w-full"
+                ]
+                [ Html.div
+                    [ Attributes.class "flex items-center justify-between" ]
+                    [ Html.span [ Attributes.class "text-4xl font-semibold leading-none" ]
+                        [ Html.text "Wallets"
+                        ]
+                    , Html.button
+                        [ Attributes.class "rounded-full h-10 w-10 bg-red-300"
+                        , Events.onClick Reload
+                        ]
+                        []
+                    ]
+                , Html.div [ Attributes.class "my-4 leading-none text-gray-500" ]
+                    [ Html.span [] [ Html.text "AUGUST 2019" ]
+                    ]
                 ]
             ]
-        , Html.div [ Attributes.class "flex flex-col" ]
+        , Html.main_ [ Attributes.class "flex flex-col px-4" ]
             [ Html.div [ Attributes.class "flex flex-col" ]
                 (List.map item (model.feed |> List.filterMap (\x -> Dict.get x model.wallets)))
             , Html.button
@@ -282,7 +293,7 @@ item wallet =
                         ]
                     ]
                 , Html.div [ Attributes.class "relative h-2 w-full mt-3 mb-2" ]
-                    [ Html.div [ Attributes.class "relative h-full w-full bg-gray-300 rounded-full" ] []
+                    [ Html.div [ Attributes.class "h-full w-full bg-gray-300 rounded-full" ] []
                     , Html.div
                         [ Attributes.classList
                             [ ( "absolute inset-0 h-full rounded-full", True )
@@ -371,7 +382,7 @@ viewModal modal =
                 , Html.div [ Attributes.class "flex flex-1 flex-col p-4" ] [ content ]
                 ]
     in
-    Html.div [ Attributes.class "absolute inset-0 bg-white h-screen" ]
+    Html.div [ Attributes.class "absolute inset-0 bg-white h-screen z-50" ]
         [ case modal of
             AddWallet subModel ->
                 AddWallet.view subModel

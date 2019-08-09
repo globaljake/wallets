@@ -27,7 +27,7 @@ viewHeader page =
 
 viewContent : Html msg -> Html msg
 viewContent content =
-    Html.main_ [ Attributes.class "container h-full" ]
+    Html.div [ Attributes.class "container h-full" ]
         [ content
         ]
 

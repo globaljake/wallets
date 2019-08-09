@@ -12,6 +12,8 @@ const init = () => {
 
   XMLHttpRequest.prototype.open = function(_, url) {
     this._url = url;
+    if (!this._url.includes("localrequest")) return open.apply(this, arguments);
+    arguments[1] = "/localrequest";
     return open.apply(this, arguments);
   };
 
