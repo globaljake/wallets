@@ -10,7 +10,7 @@ import Web.Page as Page
 import Web.Page.Blank as Blank
 import Web.Page.Home as Home
 import Web.Page.NotFound as NotFound
-import Web.Page.WalletDetail as WalletDetail
+import Web.Page.Wallet as Wallet
 import Web.Route as Route exposing (Route)
 
 
@@ -18,7 +18,7 @@ type Model
     = Redirect Session
     | NotFound Session
     | Home Home.Model
-    | WalletDetail WalletDetail.Model
+    | Wallet Wallet.Model
 
 
 init : Value -> Url -> Navigation.Key -> ( Model, Cmd Msg )
@@ -34,10 +34,10 @@ init flags url navKey =
 view : Model -> Document Msg
 view model =
     let
-        viewPage page toMsg config =
+        viewPage toMsg config =
             let
                 { title, body } =
-                    Page.view page config
+                    Page.view config
             in
             { title = title
             , body = List.map (Html.map toMsg) body
@@ -45,16 +45,16 @@ view model =
     in
     case model of
         NotFound _ ->
-            viewPage Page.Other (\_ -> Ignored) NotFound.view
+            viewPage (\_ -> Ignored) NotFound.view
 
         Redirect _ ->
-            viewPage Page.Other (\_ -> Ignored) Blank.view
+            viewPage (\_ -> Ignored) Blank.view
 
         Home subModel ->
-            viewPage Page.Home HomeMsg (Home.view subModel)
+            viewPage HomeMsg (Home.view subModel)
 
-        WalletDetail subModel ->
-            viewPage Page.Home WalletDetailMsg (WalletDetail.view subModel)
+        Wallet subModel ->
+            viewPage WalletMsg (Wallet.view subModel)
 
 
 
@@ -66,7 +66,7 @@ type Msg
     | ChangedUrl Url
     | ClickedLink Browser.UrlRequest
     | HomeMsg Home.Msg
-    | WalletDetailMsg WalletDetail.Msg
+    | WalletMsg Wallet.Msg
 
 
 toSession : Model -> Session
@@ -81,8 +81,8 @@ toSession page =
         Home subModel ->
             Home.toSession subModel
 
-        WalletDetail subModel ->
-            WalletDetail.toSession subModel
+        Wallet subModel ->
+            Wallet.toSession subModel
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -112,9 +112,9 @@ update msg model =
             Home.update subMsg subModel
                 |> updateWith Home HomeMsg model
 
-        ( WalletDetailMsg subMsg, WalletDetail subModel ) ->
-            WalletDetail.update subMsg subModel
-                |> updateWith WalletDetail WalletDetailMsg model
+        ( WalletMsg subMsg, Wallet subModel ) ->
+            Wallet.update subMsg subModel
+                |> updateWith Wallet WalletMsg model
 
         ( _, _ ) ->
             ( model
@@ -143,9 +143,9 @@ changeRouteTo maybeRoute model =
             Home.init session
                 |> updateWith Home HomeMsg model
 
-        Just (Route.WalletDetail id) ->
-            WalletDetail.init session id
-                |> updateWith WalletDetail WalletDetailMsg model
+        Just (Route.Wallet walletId) ->
+            Wallet.init session walletId
+                |> updateWith Wallet WalletMsg model
 
 
 
@@ -165,9 +165,9 @@ subscriptions model =
             Home.subscriptions subModel
                 |> Sub.map HomeMsg
 
-        WalletDetail subModel ->
-            WalletDetail.subscriptions subModel
-                |> Sub.map WalletDetailMsg
+        Wallet subModel ->
+            Wallet.subscriptions subModel
+                |> Sub.map WalletMsg
 
 
 main : Program Value Model Msg

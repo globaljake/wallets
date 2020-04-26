@@ -1,9 +1,10 @@
-module Web.Page.WalletDetail exposing (Model, Msg, init, subscriptions, toSession, update, view)
+module Web.Page.Wallet exposing (Model, Msg, init, subscriptions, toSession, update, view)
 
 import Dict exposing (Dict)
 import Html exposing (Html)
 import Html.Attributes as Attributes
 import Html.Events as Events
+import Http
 import Task
 import Wallets.Session as Session exposing (Session)
 import Wallets.Transaction as Transaction exposing (Transaction)
@@ -11,6 +12,7 @@ import Wallets.Ui.AddWallet as AddWallet
 import Wallets.Ui.Button as Button
 import Wallets.Ui.Spend as Spend
 import Wallets.Wallet as Wallet exposing (Wallet)
+import Wallets.WalletId as WalletId exposing (WalletId)
 import Web.Route as Route
 
 
@@ -20,7 +22,7 @@ import Web.Route as Route
 
 type alias Model =
     { session : Session
-    , id : String
+    , walletId : WalletId
     , transactionFeed : List String
     , wallets : Dict String Wallet
     , transactions : Dict String Transaction
@@ -43,11 +45,11 @@ type Msg
     | SetModal InitModal
     | CloseModal
     | ModalMsg ModalMsg
-    | WalletShowResponse (Result String Wallet)
-    | WalletDelete String
-    | WalletDeleteResponse (Result String String)
-    | TransactionIndexResponse (Result String { feed : List String, transactions : Dict String Transaction })
-    | TransactionShowResponse (Result String Transaction)
+    | WalletShowResponse (Result Http.Error Wallet)
+    | WalletDelete WalletId
+    | WalletDeleteResponse (Result Http.Error WalletId)
+    | TransactionIndexResponse (Result Http.Error { feed : List String, transactions : Dict String Transaction })
+    | TransactionShowResponse (Result Http.Error Transaction)
 
 
 type InitModal
@@ -64,19 +66,19 @@ type Modal
 -- STATE
 
 
-init : Session -> String -> ( Model, Cmd Msg )
-init session id =
+init : Session -> WalletId -> ( Model, Cmd Msg )
+init session walletId =
     ( { session = session
-      , id = id
+      , walletId = walletId
       , transactionFeed = []
       , wallets = Dict.empty
       , transactions = Dict.empty
       , modal = Nothing
       }
     , Cmd.batch
-        [ Transaction.indexByWalletId id
+        [ Transaction.indexByWalletId walletId
             |> Task.attempt TransactionIndexResponse
-        , Wallet.show id
+        , Wallet.show walletId
             |> Task.attempt WalletShowResponse
         ]
     )
@@ -102,7 +104,7 @@ update msg model =
             modalUpdate subMsg model
 
         WalletShowResponse (Ok wallet) ->
-            ( { model | wallets = Dict.insert (Wallet.id wallet) wallet model.wallets }
+            ( { model | wallets = Dict.insert (WalletId.toString <| Wallet.id wallet) wallet model.wallets }
             , Cmd.none
             )
 
@@ -113,8 +115,7 @@ update msg model =
 
         WalletDelete id ->
             ( model
-            , Wallet.delete id
-                |> Task.attempt WalletDeleteResponse
+            , Task.attempt WalletDeleteResponse (Wallet.delete id)
             )
 
         WalletDeleteResponse (Ok id) ->
@@ -133,9 +134,9 @@ update msg model =
                     Dict.insert (Transaction.id transaction) transaction model.transactions
               }
             , Cmd.batch
-                [ Transaction.indexByWalletId (Transaction.walletId transaction)
+                [ Transaction.indexByWalletId model.walletId
                     |> Task.attempt TransactionIndexResponse
-                , Wallet.show (Transaction.walletId transaction)
+                , Wallet.show model.walletId
                     |> Task.attempt WalletShowResponse
                 ]
             )
@@ -231,7 +232,7 @@ viewContent model =
                         [ Html.text "<" ]
                     ]
                 , Html.div [ Attributes.class "flex flex-1 justify-center" ]
-                    [ case Dict.get model.id model.wallets of
+                    [ case Dict.get (WalletId.toString model.walletId) model.wallets of
                         Nothing ->
                             Html.span [ Attributes.class "text-xl font-semibold" ]
                                 [ Html.text ""
@@ -243,7 +244,7 @@ viewContent model =
                                     [ Html.text (Wallet.emoji wallet)
                                     ]
                                 , Html.span [ Attributes.class "text-2xl font-semibold" ]
-                                    [ Html.text (Wallet.title wallet)
+                                    [ Html.text (Wallet.name wallet)
                                     ]
                                 , Html.span
                                     [ Attributes.classList
@@ -258,7 +259,7 @@ viewContent model =
                     ]
                 , Html.div [ Attributes.class "p-2 w-8 h-8" ] []
                 ]
-            , case Dict.get model.id model.wallets of
+            , case Dict.get (WalletId.toString model.walletId) model.wallets of
                 Nothing ->
                     Html.span [ Attributes.class "text-xl font-semibold" ]
                         [ Html.text ""

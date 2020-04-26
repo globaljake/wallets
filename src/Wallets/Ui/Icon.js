@@ -1,11 +1,11 @@
-import CustomElements from "./CustomElements";
+import CustomElements from "../Platform/CustomElements";
 
-const start = _app => {
+const start = (_app) => {
   return import(/* webpackChunkName: "icon-svg" */ "./Icon.json").then(
     ({ default: paths }) => {
       CustomElements.define(
         "wallets-ui-icon",
-        HTMLElement =>
+        (HTMLElement) =>
           class extends HTMLElement {
             constructor() {
               super();

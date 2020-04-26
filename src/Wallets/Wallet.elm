@@ -8,19 +8,21 @@ port module Wallets.Wallet exposing
     , emoji
     , id
     , index
-    , mockList
+    , name
     , percentAvailable
     , show
     , spent
-    , title
     )
 
 import Dict exposing (Dict)
+import Http
 import Json.Decode as Decode
 import Json.Decode.Pipeline as Decode
 import Json.Encode as Encode
 import Task exposing (Task)
-import Web.Api as Api
+import Wallets.Api as Api
+import Wallets.Api.Endpoint as Endpoint
+import Wallets.WalletId as WalletId exposing (WalletId)
 
 
 
@@ -32,22 +34,27 @@ type Wallet
 
 
 type alias Internal =
-    { id : String
-    , title : String
+    { id : WalletId
+    , name : String
     , emoji : String
     , budget : Int
-    , available : Int
+
+    -- , available : Int
     }
 
 
-id : Wallet -> String
+
+-- INFO
+
+
+id : Wallet -> WalletId
 id (Wallet wallet) =
     wallet.id
 
 
-title : Wallet -> String
-title (Wallet wallet) =
-    wallet.title
+name : Wallet -> String
+name (Wallet wallet) =
+    wallet.name
 
 
 emoji : Wallet -> String
@@ -62,92 +69,85 @@ budget (Wallet wallet) =
 
 available : Wallet -> Int
 available (Wallet wallet) =
-    wallet.available
+    0
 
 
 spent : Wallet -> Int
 spent (Wallet wallet) =
-    wallet.budget - wallet.available
+    -- wallet.budget - wallet.available
+    0
 
 
 percentAvailable : Wallet -> Float
 percentAvailable (Wallet wallet) =
-    toFloat wallet.available / toFloat wallet.budget * 100
+    -- toFloat wallet.available / toFloat wallet.budget * 100
+    0
 
 
-mockList : List Wallet
-mockList =
-    [ Wallet { id = "1", title = "Shopping", emoji = "🛍", budget = 100, available = 50 }
-    , Wallet { id = "2", title = "Entertainment", emoji = "🎬", budget = 50, available = 50 }
-    , Wallet { id = "3", title = "Groceries", emoji = "\u{1F951}", budget = 100, available = 75 }
-    , Wallet { id = "4", title = "Eating Out", emoji = "🍕", budget = 80, available = 0 }
-    ]
+
+-- SERIALIZATION
 
 
 encode : Wallet -> Encode.Value
 encode (Wallet wallet) =
     Encode.object
-        [ ( "id", Encode.string wallet.id )
-        , ( "title", Encode.string wallet.title )
+        [ ( "id", WalletId.encode wallet.id )
+        , ( "name", Encode.string wallet.name )
         , ( "emoji", Encode.string wallet.emoji )
         , ( "budget", Encode.int wallet.budget )
-        , ( "available", Encode.int wallet.available )
+
+        -- , ( "available", Encode.int wallet.available )
         ]
 
 
 decoder : Decode.Decoder Wallet
 decoder =
     Decode.succeed Internal
-        |> Decode.required "id" Decode.string
-        |> Decode.required "title" Decode.string
+        |> Decode.required "id" WalletId.decoder
+        |> Decode.required "name" Decode.string
         |> Decode.required "emoji" Decode.string
         |> Decode.required "budget" Decode.int
-        |> Decode.required "available" Decode.int
+        -- |> Decode.required "available" Decode.int
         |> Decode.map Wallet
 
 
-create : { title : String, emoji : String, budget : Int } -> Task String Wallet
+
+-- API
+
+
+create : { title : String, emoji : String, budget : Int } -> Task Http.Error Wallet
 create config =
-    Api.local
-        { url = "wallet/create"
-        , payload =
-            Just <|
-                Encode.object
-                    [ ( "title", Encode.string config.title )
-                    , ( "emoji", Encode.string config.emoji )
-                    , ( "budget", Encode.int config.budget )
-                    , ( "available", Encode.int config.budget )
-                    ]
-        , decoder = Decode.field "wallet" decoder
-        }
+    Api.post Endpoint.wallets
+        (Http.jsonBody <|
+            Encode.object
+                [ ( "title", Encode.string config.title )
+                , ( "emoji", Encode.string config.emoji )
+                , ( "budget", Encode.int config.budget )
+                , ( "available", Encode.int config.budget )
+                ]
+        )
+        decoder
 
 
-index : Task String { feed : List String, wallets : Dict String Wallet }
+index : Task Http.Error { feed : List String, wallets : Dict String Wallet }
 index =
-    Api.local
-        { url = "wallet/index"
-        , payload = Nothing
-        , decoder =
-            Decode.succeed
-                (\feed wallets -> { feed = feed, wallets = wallets })
-                |> Decode.required "feed" (Decode.list Decode.string)
-                |> Decode.required "wallets" (Decode.dict decoder)
-        }
+    Api.get Endpoint.wallets
+        (Decode.succeed
+            (\feed wallets -> { feed = feed, wallets = wallets })
+            |> Decode.required "feed" (Decode.list (Decode.oneOf [ Decode.string, Decode.map String.fromInt Decode.int ]))
+            |> Decode.required "wallets" (Decode.dict decoder)
+        )
 
 
-show : String -> Task String Wallet
-show id_ =
-    Api.local
-        { url = "wallet/show"
-        , payload = Just <| Encode.object [ ( "id", Encode.string id_ ) ]
-        , decoder = Decode.field "wallet" decoder
-        }
+show : WalletId -> Task Http.Error Wallet
+show walletId =
+    Api.get (Endpoint.wallet walletId) decoder
 
 
-delete : String -> Task String String
-delete id_ =
-    Api.local
-        { url = "wallet/delete_"
-        , payload = Just <| Encode.object [ ( "id", Encode.string id_ ) ]
-        , decoder = Decode.field "id" Decode.string
-        }
+delete : WalletId -> Task Http.Error WalletId
+delete walletId =
+    Api.delete (Endpoint.wallet walletId)
+        (Http.jsonBody <|
+            Encode.object [ ( "id", WalletId.encode walletId ) ]
+        )
+        (Decode.field "id" WalletId.decoder)

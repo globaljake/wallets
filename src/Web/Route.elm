@@ -6,18 +6,19 @@ import Html.Attributes as Attributes
 import Url exposing (Url)
 import Url.Builder as Builder
 import Url.Parser as Parser exposing ((</>), Parser)
+import Wallets.WalletId as WalletId exposing (WalletId)
 
 
 type Route
     = Home
-    | WalletDetail String
+    | Wallet WalletId
 
 
 parser : Parser (Route -> a) a
 parser =
     Parser.oneOf
         [ Parser.map Home Parser.top
-        , Parser.map WalletDetail (Parser.s "detail" </> Parser.string)
+        , Parser.map Wallet (Parser.s "detail" </> WalletId.parser)
         ]
 
 
@@ -32,8 +33,8 @@ toString page =
         Home ->
             Builder.absolute [] []
 
-        WalletDetail id ->
-            Builder.absolute [ "detail", id ] []
+        Wallet walletId ->
+            Builder.absolute [ "detail", WalletId.toString walletId ] []
 
 
 fromUrl : Url -> Maybe Route

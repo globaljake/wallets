@@ -10,9 +10,9 @@ import Html.Attributes as Attributes
 
 view : { title : String, content : Html msg }
 view =
-    { title = "Not Found"
+    { title = "404 Not Found"
     , content =
         Html.h1 [ Attributes.class "text-xl" ]
-            [ Html.text "Not Found"
+            [ Html.text "404 Not Found"
             ]
     }

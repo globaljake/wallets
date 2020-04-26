@@ -10,11 +10,13 @@ port module Wallets.Transaction exposing
     )
 
 import Dict exposing (Dict)
+import Http
 import Json.Decode as Decode
 import Json.Decode.Pipeline as Decode
 import Json.Encode as Encode
 import Task exposing (Task)
-import Web.Api as Api
+import Wallets.Api as Api
+import Wallets.WalletId as WalletId exposing (WalletId)
 
 
 
@@ -31,6 +33,10 @@ type alias Internal =
     , description : String
     , amount : Int
     }
+
+
+
+-- INFO
 
 
 id : Transaction -> String
@@ -53,6 +59,10 @@ amount (Transaction transaction) =
     transaction.amount
 
 
+
+-- SERIALIZATION
+
+
 encode : Transaction -> Encode.Value
 encode (Transaction transaction) =
     Encode.object
@@ -73,22 +83,11 @@ decoder =
         |> Decode.map Transaction
 
 
-create : { walletId : String, amount : Int, description : String } -> Task String Transaction
-create config =
-    Api.local
-        { url = "transaction/create"
-        , payload =
-            Just <|
-                Encode.object
-                    [ ( "walletId", Encode.string config.walletId )
-                    , ( "amount", Encode.int config.amount )
-                    , ( "description", Encode.string config.description )
-                    ]
-        , decoder = Decode.field "transaction" decoder
-        }
+
+--
 
 
-index : Task String { feed : List String, transactions : Dict String Transaction }
+index : Task Http.Error { feed : List String, transactions : Dict String Transaction }
 index =
     Api.local
         { url = "transaction/index"
@@ -101,20 +100,7 @@ index =
         }
 
 
-indexByWalletId : String -> Task String { feed : List String, transactions : Dict String Transaction }
-indexByWalletId walletId_ =
-    Api.local
-        { url = "transaction/indexByWalletId"
-        , payload = Just <| Encode.object [ ( "walletId", Encode.string walletId_ ) ]
-        , decoder =
-            Decode.succeed
-                (\feed transactions -> { feed = feed, transactions = transactions })
-                |> Decode.required "feed" (Decode.list Decode.string)
-                |> Decode.required "transactions" (Decode.dict decoder)
-        }
-
-
-show : String -> Task String Transaction
+show : String -> Task Http.Error Transaction
 show id_ =
     Api.local
         { url = "transaction/show"
@@ -123,7 +109,35 @@ show id_ =
         }
 
 
-delete : String -> Task String String
+indexByWalletId : WalletId -> Task Http.Error { feed : List String, transactions : Dict String Transaction }
+indexByWalletId walletId_ =
+    Api.local
+        { url = "transaction/indexByWalletId"
+        , payload = Just <| Encode.object [ ( "walletId", WalletId.encode walletId_ ) ]
+        , decoder =
+            Decode.succeed
+                (\feed transactions -> { feed = feed, transactions = transactions })
+                |> Decode.required "feed" (Decode.list Decode.string)
+                |> Decode.required "transactions" (Decode.dict decoder)
+        }
+
+
+create : { walletId : WalletId, amount : Int, description : String } -> Task Http.Error Transaction
+create config =
+    Api.local
+        { url = "transaction/create"
+        , payload =
+            Just <|
+                Encode.object
+                    [ ( "walletId", WalletId.encode config.walletId )
+                    , ( "amount", Encode.int config.amount )
+                    , ( "description", Encode.string config.description )
+                    ]
+        , decoder = Decode.field "transaction" decoder
+        }
+
+
+delete : String -> Task Http.Error String
 delete id_ =
     Api.local
         { url = "transaction/delete_"

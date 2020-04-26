@@ -5,15 +5,16 @@ import Dict exposing (Dict)
 import Html exposing (Html)
 import Html.Attributes as Attributes
 import Html.Events as Events
+import Http
 import Task
 import Wallets.Session as Session exposing (Session)
 import Wallets.Transaction as Transaction exposing (Transaction)
 import Wallets.Ui.AddWallet as AddWallet
 import Wallets.Ui.Button as Button
 import Wallets.Ui.Icon as Icon
-import Wallets.Ui.PullToRefresh as PullToRefresh
 import Wallets.Ui.Spend as Spend
 import Wallets.Wallet as Wallet exposing (Wallet)
+import Wallets.WalletId as WalletId exposing (WalletId)
 import Web.Route as Route
 
 
@@ -44,10 +45,10 @@ type Msg
     | SetModal InitModal
     | CloseModal
     | ModalMsg ModalMsg
-    | WalletShowResponse (Result String Wallet)
-    | WalletIndexResponse (Result String { feed : List String, wallets : Dict String Wallet })
-    | WalletDeleteResponse (Result String String)
-    | TransactionShowResponse (Result String Transaction)
+    | WalletShowResponse (Result Http.Error Wallet)
+    | WalletIndexResponse (Result Http.Error { feed : List String, wallets : Dict String Wallet })
+    | WalletDeleteResponse (Result Http.Error String)
+    | TransactionShowResponse WalletId (Result Http.Error Transaction)
     | Reload
 
 
@@ -99,9 +100,8 @@ update msg model =
             modalUpdate subMsg model
 
         WalletShowResponse (Ok wallet) ->
-            ( { model | wallets = Dict.insert (Wallet.id wallet) wallet model.wallets }
-            , Wallet.index
-                |> Task.attempt WalletIndexResponse
+            ( { model | wallets = Dict.insert (WalletId.toString (Wallet.id wallet)) wallet model.wallets }
+            , Task.attempt WalletIndexResponse Wallet.index
             )
 
         WalletShowResponse (Err _) ->
@@ -129,13 +129,12 @@ update msg model =
             , Cmd.none
             )
 
-        TransactionShowResponse (Ok transaction) ->
+        TransactionShowResponse walletId (Ok transaction) ->
             ( model
-            , Wallet.show (Transaction.walletId transaction)
-                |> Task.attempt WalletShowResponse
+            , Task.attempt WalletShowResponse (Wallet.show walletId)
             )
 
-        TransactionShowResponse (Err _) ->
+        TransactionShowResponse _ (Err _) ->
             ( model
             , Cmd.none
             )
@@ -180,7 +179,7 @@ modalUpdate msg model =
                 ( _, Spend.RequestSubmit createTransactionPayload ) ->
                     ( { model | modal = Nothing }
                     , Transaction.create createTransactionPayload
-                        |> Task.attempt TransactionShowResponse
+                        |> Task.attempt (TransactionShowResponse createTransactionPayload.walletId)
                     )
 
         _ ->
@@ -215,10 +214,7 @@ viewContent model =
                 [ Attributes.class "flex flex-1 mb-2 justify-center items-center"
                 , Attributes.style "height" "105px"
                 ]
-                [ PullToRefresh.view
-                    { onRefresh = NoOp
-                    , content = Html.span [ Attributes.class "h-6 w-6" ] [ Icon.check ]
-                    }
+                [ Html.span [ Attributes.class "h-6 w-6" ] [ Icon.check ]
                 ]
             , Html.div
                 [ Attributes.class "flex flex-col fixed top-0 left-0 px-4 pt-4 bg-white w-full"
@@ -286,11 +282,11 @@ item wallet =
         [ Attributes.class "p-5 my-2 bg-white rounded-lg shadow"
         ]
         [ Html.div [ Attributes.class "flex flex-col overflow-hidden" ]
-            [ Html.a [ Route.href (Route.WalletDetail (Wallet.id wallet)) ]
+            [ Html.a [ Route.href (Route.Wallet (Wallet.id wallet)) ]
                 [ Html.div [ Attributes.class "flex justify-between" ]
                     [ Html.div [ Attributes.class "flex font-semibold text-xl items-center" ]
                         [ Html.span [ Attributes.class "pr-2" ] [ Html.text (Wallet.emoji wallet) ]
-                        , Html.span [] [ Html.text (Wallet.title wallet) ]
+                        , Html.span [] [ Html.text (Wallet.name wallet) ]
                         ]
                     , Html.span [ Attributes.class "font-semibold text-xl" ]
                         [ Html.text <| formatToDollars (Wallet.available wallet)

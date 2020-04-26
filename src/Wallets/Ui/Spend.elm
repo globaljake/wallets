@@ -4,6 +4,7 @@ import Html exposing (Html)
 import Html.Attributes as Attributes
 import Html.Events as Events
 import Wallets.Wallet as Wallet exposing (Wallet)
+import Wallets.WalletId as WalletId exposing (WalletId)
 
 
 type Model
@@ -21,7 +22,7 @@ type Msg
 
 
 type Ext
-    = RequestSubmit { walletId : String, description : String, amount : Int }
+    = RequestSubmit { walletId : WalletId, description : String, amount : Int }
     | NoOp
 
 
