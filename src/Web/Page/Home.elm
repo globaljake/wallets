@@ -11,6 +11,7 @@ import Wallets.Transaction as Transaction exposing (Transaction)
 import Wallets.Ui.AddWallet as AddWallet
 import Wallets.Ui.Button as Button
 import Wallets.Ui.Icon as Icon
+import Wallets.Ui.PullToRefresh as PullToRefresh
 import Wallets.Ui.Spend as Spend
 import Wallets.Wallet as Wallet exposing (Wallet)
 import Web.Route as Route
@@ -214,7 +215,10 @@ viewContent model =
                 [ Attributes.class "flex flex-1 mb-2 justify-center items-center"
                 , Attributes.style "height" "105px"
                 ]
-                [ Html.span [ Attributes.class "h-6 w-6" ] [ Icon.check ]
+                [ PullToRefresh.view
+                    { onRefresh = NoOp
+                    , content = Html.span [ Attributes.class "h-6 w-6" ] [ Icon.check ]
+                    }
                 ]
             , Html.div
                 [ Attributes.class "flex flex-col fixed top-0 left-0 px-4 pt-4 bg-white w-full"
