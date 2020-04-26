@@ -1,53 +1,66 @@
-const path = require("path");
-const MiniCssExtractPlugin = require("mini-css-extract-plugin");
 const CopyPlugin = require("copy-webpack-plugin");
+const MiniCssExtractPlugin = require("mini-css-extract-plugin");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
-const { CleanWebpackPlugin } = require("clean-webpack-plugin");
 
-module.exports = (env, options) => ({
-  entry: {
-    web: path.join(__dirname, "src/Web/index.js")
-    // examples: path.join(__dirname, "src/Examples/index.js")
-  },
-  output: {
-    publicPath: "/",
-    chunkFilename: "[name].bundle.js",
-    filename: "[name].[contenthash].js",
-    path: path.resolve(__dirname, "./dist")
-  },
+module.exports = (env, { mode }) => ({
+  entry: "./src/Web",
+  output: { filename: "[name].[hash].js" },
   module: {
     rules: [
-      {
-        test: /\.js$/,
-        exclude: /node_modules/,
-        use: {
-          loader: "babel-loader",
-          options: {
-            presets: ["@babel/preset-env"]
-          }
-        }
-      },
+      { test: /\.js$/, exclude: /node_modules/, use: loader.babel(mode) },
       {
         test: /\.css$/,
-        use: [MiniCssExtractPlugin.loader, "css-loader", "postcss-loader"]
+        use: [MiniCssExtractPlugin.loader, "css-loader", loader.postcss(mode)],
       },
       {
         test: /\.elm$/,
         exclude: [/elm-stuff/, /node_modules/],
-        loader: "elm-webpack-loader",
-        options: {
-          cwd: __dirname,
-          runtimeOptions: "-A128m -H128m -n8m",
-          debug: options.mode === "development",
-          optimize: options.mode === "production"
-        }
-      }
-    ]
+        use: loader.elm(mode),
+      },
+    ],
   },
   plugins: [
-    new CleanWebpackPlugin(),
-    new HtmlWebpackPlugin({ template: "src/Web/index.html", chunks: ["web"] }),
+    new HtmlWebpackPlugin({ template: "src/Web/index.html" }),
     new MiniCssExtractPlugin({ filename: "[name].[contenthash].css" }),
-    new CopyPlugin([{ from: "public/", to: "../dist" }])
-  ]
+    new CopyPlugin([{ from: "public" }]),
+  ],
 });
+
+const loader = {
+  babel(mode_) {
+    return {
+      loader: "babel-loader",
+      options: { presets: ["@babel/preset-env"] },
+    };
+  },
+  postcss(mode) {
+    const prodPlugins = [
+      require("@fullhuman/postcss-purgecss")({
+        content: ["./src/**/*.js", "./src/**/*.elm", "./src/**/*.html"],
+        defaultExtractor: (content) => content.match(/[A-Za-z0-9-_:/]+/g) || [],
+      }),
+      require("cssnano"),
+    ];
+    return {
+      loader: "postcss-loader",
+      options: {
+        plugins: [
+          require("tailwindcss"),
+          require("postcss-preset-env"),
+          ...(mode === "production" ? prodPlugins : []),
+        ],
+      },
+    };
+  },
+  elm(mode) {
+    return {
+      loader: "elm-webpack-loader",
+      options: {
+        cwd: __dirname,
+        runtimeOptions: "-A128m -H128m -n8m",
+        debug: mode === "development",
+        optimize: mode === "production",
+      },
+    };
+  },
+};
