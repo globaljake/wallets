@@ -1,4 +1,4 @@
-port module Wallets.Wallet exposing
+module Wallets.Wallet exposing
     ( Wallet
     , available
     , budget
@@ -69,6 +69,7 @@ budget (Wallet wallet) =
 
 available : Wallet -> Int
 available (Wallet wallet) =
+    -- wallet.available
     0
 
 

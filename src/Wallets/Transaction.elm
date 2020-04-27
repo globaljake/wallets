@@ -1,4 +1,4 @@
-port module Wallets.Transaction exposing
+module Wallets.Transaction exposing
     ( Transaction
     , amount
     , create
